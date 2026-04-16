@@ -20,6 +20,21 @@ interface ParsedRow {
 
 type Stage = 'upload' | 'mapping' | 'review';
 
+const headerKeywords = [
+  'data',
+  'date',
+  'descrizione',
+  'causale',
+  'note',
+  'importo',
+  'amount',
+  'addebito',
+  'accredito',
+  'tipo',
+  'saldo',
+  'valuta',
+];
+
 export default function CsvImport() {
   const [open, setOpen] = useState(false);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -72,13 +87,41 @@ export default function CsvImport() {
       return;
     }
 
-    const hdrs = (matrix[0] || []).map((v) => String(v || '').trim());
-    const data = matrix.slice(1).map((r) => r.map((c) => String(c || '').trim()));
+    const normalized = matrix.map((r) => r.map((v) => String(v ?? '').trim()));
+    const headerIndex = detectHeaderRow(normalized);
+    const hdrs = normalized[headerIndex] || [];
+    const data = normalized.slice(headerIndex + 1).filter((row) => row.some((cell) => cell !== ''));
 
     setHeaders(hdrs);
     setRows(data);
     autoMapColumns(hdrs);
     setStage('mapping');
+  };
+
+  const detectHeaderRow = (matrix: string[][]): number => {
+    const maxRowsToScan = Math.min(30, matrix.length);
+    let bestIndex = 0;
+    let bestScore = -1;
+
+    for (let i = 0; i < maxRowsToScan; i++) {
+      const row = matrix[i] || [];
+      const nonEmpty = row.filter((c) => c.trim() !== '');
+      if (!nonEmpty.length) continue;
+
+      const joined = nonEmpty.join(' ').toLowerCase();
+      const keywordHits = headerKeywords.reduce((acc, k) => acc + (joined.includes(k) ? 1 : 0), 0);
+      const textCells = nonEmpty.filter((c) => /[a-zA-ZÀ-ÿ]/.test(c)).length;
+      const numericCells = nonEmpty.filter((c) => /^-?\d+[.,]?\d*$/.test(c)).length;
+
+      // prefer rows with semantic labels and mostly textual headers
+      const score = keywordHits * 5 + textCells * 2 - numericCells;
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = i;
+      }
+    }
+
+    return bestIndex;
   };
 
   const autoMapColumns = (hdrs: string[]) => {

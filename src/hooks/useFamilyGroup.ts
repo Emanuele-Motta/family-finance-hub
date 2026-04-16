@@ -11,7 +11,10 @@ export function useFamilyGroup() {
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from('family_groups')
       .select('*');

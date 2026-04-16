@@ -37,7 +37,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-40 w-64 flex flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300',
+          'fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-64'
         )}
       >
@@ -95,7 +95,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <header className="h-16 flex items-center gap-4 px-6 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-20">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={toggleSidebar}>
             <Menu className="w-5 h-5" />

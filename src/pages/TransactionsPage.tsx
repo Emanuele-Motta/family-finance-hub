@@ -113,7 +113,7 @@ export default function TransactionsPage() {
             <DialogTrigger asChild>
               <Button size="sm" className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-1" />Nuova</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg max-h-[88vh] overflow-auto">
+            <DialogContent className="sm:max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overscroll-contain pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[88vh]">
               <DialogHeader><DialogTitle>Nuova transazione</DialogTitle></DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

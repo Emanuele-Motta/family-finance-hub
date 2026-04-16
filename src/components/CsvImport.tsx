@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useTransactions, useAccounts } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts, useCategories } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,6 +15,8 @@ interface ParsedRow {
   type: 'income' | 'expense';
   date: string;
   notes: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
   include: boolean;
 }
 
@@ -46,6 +48,7 @@ export default function CsvImport() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { addTransaction } = useTransactions();
   const { accounts } = useAccounts();
+  const categories = useCategories();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
 
@@ -174,6 +177,58 @@ export default function CsvImport() {
     return date;
   };
 
+  const inferCategoryFromDescription = (
+    description: string,
+    currentType: 'income' | 'expense',
+  ): { type: 'income' | 'expense'; categoryId: string | null; categoryName: string | null } => {
+    const text = description.toLowerCase();
+    const typeHints: Record<string, 'income' | 'expense'> = {
+      stipendio: 'income',
+      accredito: 'income',
+      bonifico: 'income',
+      rimborso: 'income',
+      addebito: 'expense',
+      pagamento: 'expense',
+      pos: 'expense',
+      prelievo: 'expense',
+      bolletta: 'expense',
+    };
+
+    let detectedType = currentType;
+    for (const [kw, t] of Object.entries(typeHints)) {
+      if (text.includes(kw)) {
+        detectedType = t;
+        break;
+      }
+    }
+
+    const detectedCategory =
+      categories
+        .filter((c) => c.type === detectedType)
+        .find((c) => text.includes(c.name.toLowerCase())) ||
+      categories
+        .filter((c) => c.type === detectedType)
+        .find((c) => {
+          const aliases: Record<string, string[]> = {
+            Alimentari: ['supermercato', 'spesa', 'coop', 'esselunga', 'conad'],
+            Trasporti: ['benzina', 'carburante', 'autostrada', 'treno', 'bus', 'metro'],
+            Ristoranti: ['ristorante', 'bar', 'pizzeria', 'caffè', 'delivery', 'just eat', 'glovo'],
+            Utenze: ['luce', 'gas', 'acqua', 'telefono', 'internet', 'fibra'],
+            Casa: ['affitto', 'condominio', 'mutuo', 'manutenzione'],
+            Stipendio: ['stipendio', 'salary', 'payroll'],
+            Investimenti: ['investimento', 'etf', 'azione', 'dividendo'],
+          };
+          const keys = aliases[c.name] || [];
+          return keys.some((k) => text.includes(k));
+        });
+
+    return {
+      type: detectedType,
+      categoryId: detectedCategory?.id ?? null,
+      categoryName: detectedCategory?.name ?? null,
+    };
+  };
+
   const buildPreview = () => {
     if (!mapping.amount) {
       toast.error('Seleziona almeno la colonna Importo');
@@ -192,12 +247,18 @@ export default function CsvImport() {
           if (t.includes('entrata') || t.includes('accredito') || t.includes('income')) type = 'income';
         }
 
+        const notes = ((mapping.notes ? row[parseInt(mapping.notes)] : null) || '').trim();
+        const descriptionText = [notes, ...row].join(' ').trim();
+        const inferred = inferCategoryFromDescription(descriptionText, type);
+
         return {
           id: `${i}-${Math.random().toString(36).slice(2, 8)}`,
           amount: Math.abs(rawAmount),
-          type,
+          type: inferred.type,
           date: normalizeDate(mapping.date ? row[parseInt(mapping.date)] : undefined),
-          notes: (mapping.notes ? row[parseInt(mapping.notes)] : null) || null,
+          notes: notes || null,
+          categoryId: inferred.categoryId,
+          categoryName: inferred.categoryName,
           include: true,
         } as ParsedRow;
       })
@@ -236,7 +297,7 @@ export default function CsvImport() {
           user_id: user.id,
           created_by_user_id: user.id,
           paid_by_user_id: user.id,
-          category_id: null,
+          category_id: row.categoryId,
           account_id: defaultAccountId,
           to_account_id: null,
           amount: row.amount,
@@ -368,6 +429,7 @@ export default function CsvImport() {
                     <th className="px-2 py-2 text-left">Data</th>
                     <th className="px-2 py-2 text-left">Tipo</th>
                     <th className="px-2 py-2 text-left">Importo</th>
+                    <th className="px-2 py-2 text-left">Categoria</th>
                     <th className="px-2 py-2 text-left">Note</th>
                     <th className="px-2 py-2 text-right">Azione</th>
                   </tr>
@@ -379,6 +441,7 @@ export default function CsvImport() {
                       <td className="px-2 py-2">{row.date}</td>
                       <td className="px-2 py-2">{row.type}</td>
                       <td className="px-2 py-2">€{row.amount.toFixed(2)}</td>
+                      <td className="px-2 py-2">{row.categoryName || '-'}</td>
                       <td className="px-2 py-2 truncate max-w-[220px]">{row.notes || '-'}</td>
                       <td className="px-2 py-2 text-right">
                         <Button variant="ghost" size="sm" onClick={() => toggleRow(row.id)}>

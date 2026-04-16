@@ -60,7 +60,8 @@ export default function CsvImport() {
   };
 
   const parseExcel = async (file: File) => {
-    const XLSX = await import('xlsx');
+    const xlsxSource = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm';
+    const XLSX = await import(/* @vite-ignore */ xlsxSource);
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
     const firstSheet = wb.Sheets[wb.SheetNames[0]];

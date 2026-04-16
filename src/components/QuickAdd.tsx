@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTransactions, useCategories } from '@/hooks/useFinanceData';
+import { useTransactions, useCategories, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -67,10 +67,12 @@ export default function QuickAdd() {
   const inputRef = useRef<HTMLInputElement>(null);
   const { addTransaction } = useTransactions();
   const categories = useCategories();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
 
   const parsed = parseSmartInput(input, categories);
+  const defaultAccount = accounts.find(a => a.is_primary) || accounts[0];
 
   // Keyboard shortcut
   useEffect(() => {
@@ -105,13 +107,17 @@ export default function QuickAdd() {
   };
 
   const handleSubmit = async () => {
-    if (!parsed || !user || !currentFamilyGroupId) return;
+    if (!parsed || !user || !currentFamilyGroupId || !defaultAccount) return;
     try {
       const catId = parsed.category?.id || null;
       await addTransaction({
         family_group_id: currentFamilyGroupId,
         user_id: user.id,
+        created_by_user_id: user.id,
+        paid_by_user_id: user.id,
         category_id: catId,
+        account_id: defaultAccount.id,
+        to_account_id: null,
         amount: parsed.amount,
         type: parsed.type,
         date: new Date().toISOString().split('T')[0],
@@ -130,12 +136,16 @@ export default function QuickAdd() {
   };
 
   const handleQuickCategory = async (cat: Category) => {
-    if (!parsed?.amount || !user || !currentFamilyGroupId) return;
+    if (!parsed?.amount || !user || !currentFamilyGroupId || !defaultAccount) return;
     try {
       await addTransaction({
         family_group_id: currentFamilyGroupId,
         user_id: user.id,
+        created_by_user_id: user.id,
+        paid_by_user_id: user.id,
         category_id: cat.id,
+        account_id: defaultAccount.id,
+        to_account_id: null,
         amount: parsed.amount,
         type: cat.type,
         date: new Date().toISOString().split('T')[0],

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useTransactions, useCategories } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -17,7 +17,7 @@ export default function CsvImport() {
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { addTransaction } = useTransactions();
-  const categories = useCategories();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
 
@@ -52,7 +52,8 @@ export default function CsvImport() {
   };
 
   const handleImport = async () => {
-    if (!user || !currentFamilyGroupId || !mapping.amount) return;
+    const defaultAccountId = accounts.find(a => a.is_primary)?.id || accounts[0]?.id;
+    if (!user || !currentFamilyGroupId || !mapping.amount || !defaultAccountId) return;
     setImporting(true);
     let count = 0;
     for (const row of rows) {
@@ -86,7 +87,11 @@ export default function CsvImport() {
         await addTransaction({
           family_group_id: currentFamilyGroupId,
           user_id: user.id,
+          created_by_user_id: user.id,
+          paid_by_user_id: user.id,
           category_id: null,
+          account_id: defaultAccountId,
+          to_account_id: null,
           amount,
           type,
           date,

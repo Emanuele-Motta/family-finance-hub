@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useFamilyGroup } from '@/hooks/useFamilyGroup';
+import { useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +17,7 @@ type SetupMode = 'import' | 'zero' | null;
 
 export default function OnboardingPage() {
   const { createGroup, joinGroup } = useFamilyGroup();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,8 @@ export default function OnboardingPage() {
   };
 
   const handleSetup = async () => {
-    if (!user || !currentFamilyGroupId) return;
+    const defaultAccountId = accounts.find(a => a.is_primary)?.id || accounts[0]?.id;
+    if (!user || !currentFamilyGroupId || !defaultAccountId) return;
     setLoading(true);
     try {
       // Add initial balance as income transaction
@@ -69,6 +72,10 @@ export default function OnboardingPage() {
         await supabase.from('transactions').insert({
           family_group_id: currentFamilyGroupId,
           user_id: user.id,
+          created_by_user_id: user.id,
+          paid_by_user_id: user.id,
+          account_id: defaultAccountId,
+          to_account_id: null,
           amount: parseFloat(initialBalance),
           type: 'income' as const,
           date: new Date().toISOString().split('T')[0],

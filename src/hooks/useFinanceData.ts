@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/stores/appStore';
-import type { Transaction, Category, Budget, Goal, Debt } from '@/types/finance';
+import type { Transaction, Category, Budget, Goal, Debt, Account } from '@/types/finance';
 
 export function useTransactions() {
   const { currentFamilyGroupId } = useAppStore();
@@ -173,4 +173,27 @@ export function useDebts() {
   };
 
   return { debts, loading, addDebt, updateDebt, deleteDebt, refetch: fetch };
+}
+
+export function useAccounts() {
+  const { currentFamilyGroupId } = useAppStore();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!currentFamilyGroupId) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('family_group_id', currentFamilyGroupId)
+      .order('is_primary', { ascending: false })
+      .order('name', { ascending: true });
+    setAccounts((data as Account[]) || []);
+    setLoading(false);
+  }, [currentFamilyGroupId]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  return { accounts, loading, refetch: fetch };
 }

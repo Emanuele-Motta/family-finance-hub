@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTransactions, useCategories } from '@/hooks/useFinanceData';
+import { useTransactions, useCategories, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Filter, ArrowLeftRight } from 'lucide-react';
+import { Plus, Trash2, Filter } from 'lucide-react';
 import CsvImport from '@/components/CsvImport';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -17,6 +17,7 @@ import { it } from 'date-fns/locale';
 export default function TransactionsPage() {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const categories = useCategories();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
   const { toast } = useToast();
@@ -25,17 +26,29 @@ export default function TransactionsPage() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
 
   const [form, setForm] = useState({
-    amount: '', type: 'expense' as 'income' | 'expense', category_id: '', date: new Date().toISOString().split('T')[0], notes: '', recurring: false,
+    amount: '',
+    type: 'expense' as 'income' | 'expense' | 'transfer',
+    category_id: '',
+    account_id: '',
+    to_account_id: '',
+    date: new Date().toISOString().split('T')[0],
+    notes: '',
+    recurring: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !currentFamilyGroupId) return;
+    const defaultAccountId = form.account_id || accounts.find(a => a.is_primary)?.id || accounts[0]?.id;
+    if (!user || !currentFamilyGroupId || !defaultAccountId) return;
     try {
       await addTransaction({
         family_group_id: currentFamilyGroupId,
         user_id: user.id,
-        category_id: form.category_id || null,
+        created_by_user_id: user.id,
+        paid_by_user_id: user.id,
+        category_id: form.type === 'transfer' ? null : form.category_id || null,
+        account_id: defaultAccountId,
+        to_account_id: form.type === 'transfer' ? form.to_account_id || null : null,
         amount: parseFloat(form.amount),
         type: form.type,
         date: form.date,
@@ -46,7 +59,7 @@ export default function TransactionsPage() {
       });
       toast({ title: 'Transazione aggiunta!' });
       setOpen(false);
-      setForm({ amount: '', type: 'expense', category_id: '', date: new Date().toISOString().split('T')[0], notes: '', recurring: false });
+      setForm({ amount: '', type: 'expense', category_id: '', account_id: '', to_account_id: '', date: new Date().toISOString().split('T')[0], notes: '', recurring: false });
     } catch (err: any) {
       toast({ title: 'Errore', description: err.message, variant: 'destructive' });
     }
@@ -75,12 +88,13 @@ export default function TransactionsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-muted-foreground" />
-          <Select value={filterType} onValueChange={setFilterType}>
+              <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tutti i tipi</SelectItem>
               <SelectItem value="income">Entrate</SelectItem>
               <SelectItem value="expense">Spese</SelectItem>
+              <SelectItem value="transfer">Trasferimenti</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
@@ -107,15 +121,37 @@ export default function TransactionsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo</Label>
-                  <Select value={form.type} onValueChange={(v: 'income' | 'expense') => setForm(f => ({ ...f, type: v }))}>
+                  <Select value={form.type} onValueChange={(v: 'income' | 'expense' | 'transfer') => setForm(f => ({ ...f, type: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="expense">Spesa</SelectItem>
                       <SelectItem value="income">Entrata</SelectItem>
+                      <SelectItem value="transfer">Trasferimento</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Account origine</Label>
+                <Select value={form.account_id} onValueChange={v => setForm(f => ({ ...f, account_id: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Seleziona account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.type === 'transfer' && (
+                <div className="space-y-2">
+                  <Label>Account destinazione</Label>
+                  <Select value={form.to_account_id} onValueChange={v => setForm(f => ({ ...f, to_account_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Seleziona account" /></SelectTrigger>
+                    <SelectContent>
+                      {accounts.filter(a => a.id !== (form.account_id || accounts[0]?.id)).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {form.type !== 'transfer' && (
               <div className="space-y-2">
                 <Label>Categoria</Label>
                 <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
@@ -125,6 +161,7 @@ export default function TransactionsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              )}
               <div className="space-y-2">
                 <Label>Data</Label>
                 <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
@@ -154,7 +191,7 @@ export default function TransactionsPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color || '#888' }} />
                       <div>
-                        <p className="text-sm font-medium">{cat?.name || 'Senza categoria'}</p>
+                        <p className="text-sm font-medium">{t.type === 'transfer' ? 'Trasferimento interno' : (cat?.name || 'Senza categoria')}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(parseISO(t.date), 'dd MMM yyyy', { locale: it })}
                           {t.notes && ` · ${t.notes}`}
@@ -162,8 +199,8 @@ export default function TransactionsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${t.type === 'income' ? 'text-income' : 'text-expense'}`}>
-                        {t.type === 'income' ? '+' : '-'}{fmt(Number(t.amount))}
+                      <span className={`text-sm font-semibold ${t.type === 'income' ? 'text-income' : t.type === 'expense' ? 'text-expense' : 'text-primary'}`}>
+                        {t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '↔'}{fmt(Number(t.amount))}
                       </span>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(t.id)}>
                         <Trash2 className="w-3.5 h-3.5" />

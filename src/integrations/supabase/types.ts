@@ -355,6 +355,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_family_group: { Args: { _name: string }; Returns: string }
       get_user_family_ids: { Args: { _user_id: string }; Returns: string[] }
     }
     Enums: {

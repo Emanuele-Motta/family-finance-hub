@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTransactions, useCategories, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -84,100 +84,101 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tutti i tipi</SelectItem>
-              <SelectItem value="income">Entrate</SelectItem>
-              <SelectItem value="expense">Spese</SelectItem>
-              <SelectItem value="transfer">Trasferimenti</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-full h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutti i tipi</SelectItem>
+                <SelectItem value="income">Entrate</SelectItem>
+                <SelectItem value="expense">Spese</SelectItem>
+                <SelectItem value="transfer">Trasferimenti</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-40 h-9"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full h-10"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tutte le categorie</SelectItem>
               {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
           <CsvImport />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm"><Plus className="w-4 h-4 mr-1" />Nuova</Button>
+              <Button size="sm" className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-1" />Nuova</Button>
             </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Nuova transazione</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Importo (€)</Label>
-                  <Input type="number" step="0.01" required value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+            <DialogContent className="sm:max-w-lg max-h-[88vh] overflow-auto">
+              <DialogHeader><DialogTitle>Nuova transazione</DialogTitle></DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Importo (€)</Label>
+                    <Input type="number" step="0.01" required value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select value={form.type} onValueChange={(v: 'income' | 'expense' | 'transfer') => setForm(f => ({ ...f, type: v }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="expense">Spesa</SelectItem>
+                        <SelectItem value="income">Entrata</SelectItem>
+                        <SelectItem value="transfer">Trasferimento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Tipo</Label>
-                  <Select value={form.type} onValueChange={(v: 'income' | 'expense' | 'transfer') => setForm(f => ({ ...f, type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="expense">Spesa</SelectItem>
-                      <SelectItem value="income">Entrata</SelectItem>
-                      <SelectItem value="transfer">Trasferimento</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Account origine</Label>
-                <Select value={form.account_id} onValueChange={v => setForm(f => ({ ...f, account_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona account" /></SelectTrigger>
-                  <SelectContent>
-                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.type === 'transfer' && (
-                <div className="space-y-2">
-                  <Label>Account destinazione</Label>
-                  <Select value={form.to_account_id} onValueChange={v => setForm(f => ({ ...f, to_account_id: v }))}>
+                  <Label>Account origine</Label>
+                  <Select value={form.account_id} onValueChange={v => setForm(f => ({ ...f, account_id: v }))}>
                     <SelectTrigger><SelectValue placeholder="Seleziona account" /></SelectTrigger>
                     <SelectContent>
-                      {accounts.filter(a => a.id !== (form.account_id || accounts[0]?.id)).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                      {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
-              {form.type !== 'transfer' && (
-              <div className="space-y-2">
-                <Label>Categoria</Label>
-                <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.filter(c => c.type === form.type).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              )}
-              <div className="space-y-2">
-                <Label>Data</Label>
-                <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Note</Label>
-                <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opzionale" />
-              </div>
-              <Button type="submit" className="w-full">Aggiungi transazione</Button>
-            </form>
-          </DialogContent>
+                {form.type === 'transfer' && (
+                  <div className="space-y-2">
+                    <Label>Account destinazione</Label>
+                    <Select value={form.to_account_id} onValueChange={v => setForm(f => ({ ...f, to_account_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona account" /></SelectTrigger>
+                      <SelectContent>
+                        {accounts.filter(a => a.id !== (form.account_id || accounts[0]?.id)).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {form.type !== 'transfer' && (
+                  <div className="space-y-2">
+                    <Label>Categoria</Label>
+                    <Select value={form.category_id} onValueChange={v => setForm(f => ({ ...f, category_id: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Seleziona" /></SelectTrigger>
+                      <SelectContent>
+                        {categories.filter(c => c.type === form.type).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Data</Label>
+                  <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Note</Label>
+                  <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opzionale" />
+                </div>
+                <Button type="submit" className="w-full">Aggiungi transazione</Button>
+              </form>
+            </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      {/* Transactions list */}
       <Card className="glass-card">
         <CardContent className="p-0">
           {filtered.length === 0 ? (
@@ -186,24 +187,28 @@ export default function TransactionsPage() {
             <div className="divide-y divide-border">
               {filtered.map(t => {
                 const cat = categories.find(c => c.id === t.category_id);
+                const account = accounts.find(a => a.id === t.account_id);
                 return (
-                  <div key={t.id} className="flex items-center justify-between px-4 py-3 hover:bg-accent/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: cat?.color || '#888' }} />
-                      <div>
-                        <p className="text-sm font-medium">{t.type === 'transfer' ? 'Trasferimento interno' : (cat?.name || 'Senza categoria')}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(parseISO(t.date), 'dd MMM yyyy', { locale: it })}
-                          {t.notes && ` · ${t.notes}`}
-                        </p>
+                  <div key={t.id} className="px-4 py-3 hover:bg-accent/30 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: cat?.color || '#888' }} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{t.type === 'transfer' ? 'Trasferimento interno' : (cat?.name || 'Senza categoria')}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {format(parseISO(t.date), 'dd MMM yyyy', { locale: it })}
+                            {account?.name ? ` · ${account.name}` : ''}
+                            {t.notes ? ` · ${t.notes}` : ''}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${t.type === 'income' ? 'text-income' : t.type === 'expense' ? 'text-expense' : 'text-primary'}`}>
+                      <span className={`text-sm font-semibold whitespace-nowrap ${t.type === 'income' ? 'text-income' : t.type === 'expense' ? 'text-expense' : 'text-primary'}`}>
                         {t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '↔'}{fmt(Number(t.amount))}
                       </span>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(t.id)}>
-                        <Trash2 className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(t.id)}>
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>

@@ -33,23 +33,13 @@ export function useFamilyGroup() {
 
   const createGroup = async (name: string) => {
     if (!user) return null;
-    const { data: group, error } = await supabase
-      .from('family_groups')
-      .insert({ name })
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc('create_family_group', { _name: name });
     if (error) throw error;
     
-    // Add current user as admin
-    await supabase.from('family_members').insert({
-      user_id: user.id,
-      family_group_id: group.id,
-      role: 'admin',
-    });
-    
-    setCurrentFamilyGroupId(group.id);
+    const groupId = data as string;
+    setCurrentFamilyGroupId(groupId);
     await fetchGroups();
-    return group as FamilyGroup;
+    return { id: groupId, name } as FamilyGroup;
   };
 
   const joinGroup = async (inviteCode: string) => {

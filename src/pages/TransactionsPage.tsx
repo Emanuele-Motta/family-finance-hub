@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Filter } from 'lucide-react';
+import { Plus, Trash2, Filter, ArrowLeftRight } from 'lucide-react';
+import CsvImport from '@/components/CsvImport';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -90,10 +91,12 @@ export default function TransactionsPage() {
             </SelectContent>
           </Select>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1" />Nuova</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <CsvImport />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="w-4 h-4 mr-1" />Nuova</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nuova transazione</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -133,7 +136,8 @@ export default function TransactionsPage() {
               <Button type="submit" className="w-full">Aggiungi transazione</Button>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Transactions list */}

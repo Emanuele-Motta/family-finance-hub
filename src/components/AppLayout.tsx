@@ -4,7 +4,7 @@ import { useAppStore } from '@/stores/appStore';
 import { useFamilyGroup } from '@/hooks/useFamilyGroup';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, ArrowLeftRight, PiggyBank, Target, CreditCard, Settings, LogOut, Menu, X, Wallet, Users
+  LayoutDashboard, ArrowLeftRight, PiggyBank, Target, CreditCard, Settings, LogOut, Menu, X, Wallet, Users, MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,7 @@ const navItems = [
   { to: '/budgets', icon: PiggyBank, label: 'Budget' },
   { to: '/goals', icon: Target, label: 'Obiettivi' },
   { to: '/debts', icon: CreditCard, label: 'Debiti' },
+  { to: '/chat', icon: MessageCircle, label: 'Chat' },
   { to: '/settings', icon: Settings, label: 'Impostazioni' },
 ];
 

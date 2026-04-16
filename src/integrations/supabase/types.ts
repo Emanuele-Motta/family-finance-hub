@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          family_group_id: string
+          id: string
+          is_primary: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          family_group_id: string
+          id?: string
+          is_primary?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          is_primary?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           amount: number
@@ -285,50 +323,62 @@ export type Database = {
       }
       transactions: {
         Row: {
+          account_id: string
           amount: number
           category_id: string | null
           created_at: string
+          created_by_user_id: string
           date: string
           family_group_id: string
           id: string
           notes: string | null
+          paid_by_user_id: string | null
           recurrence_type: Database["public"]["Enums"]["recurrence_type"] | null
           recurring: boolean
           tags: string[] | null
+          to_account_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_id: string
           amount: number
           category_id?: string | null
           created_at?: string
+          created_by_user_id: string
           date?: string
           family_group_id: string
           id?: string
           notes?: string | null
+          paid_by_user_id?: string | null
           recurrence_type?:
             | Database["public"]["Enums"]["recurrence_type"]
             | null
           recurring?: boolean
           tags?: string[] | null
+          to_account_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_id?: string
           amount?: number
           category_id?: string | null
           created_at?: string
+          created_by_user_id?: string
           date?: string
           family_group_id?: string
           id?: string
           notes?: string | null
+          paid_by_user_id?: string | null
           recurrence_type?:
             | Database["public"]["Enums"]["recurrence_type"]
             | null
           recurring?: boolean
           tags?: string[] | null
+          to_account_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
           user_id?: string
@@ -342,10 +392,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_family_group_id_fkey"
             columns: ["family_group_id"]
             isOneToOne: false
             referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -362,7 +426,7 @@ export type Database = {
       budget_period: "monthly" | "yearly"
       family_role: "admin" | "member"
       recurrence_type: "monthly" | "yearly"
-      transaction_type: "income" | "expense"
+      transaction_type: "income" | "expense" | "transfer"
     }
     CompositeTypes: {
       [_ in never]: never

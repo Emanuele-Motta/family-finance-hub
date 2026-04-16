@@ -27,7 +27,7 @@ export default function FinancialCalendar({ transactions, categories, debts }: P
       const key = t.date;
       const existing = map.get(key) || { income: 0, expense: 0 };
       if (t.type === 'income') existing.income += Number(t.amount);
-      else existing.expense += Number(t.amount);
+      if (t.type === 'expense') existing.expense += Number(t.amount);
       map.set(key, existing);
     });
     return map;

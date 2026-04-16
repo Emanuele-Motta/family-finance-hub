@@ -34,15 +34,27 @@ export interface Transaction {
   id: string;
   family_group_id: string;
   user_id: string;
+  created_by_user_id: string;
+  paid_by_user_id: string | null;
   category_id: string | null;
+  account_id: string;
+  to_account_id: string | null;
   amount: number;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'transfer';
   date: string;
   notes: string | null;
   recurring: boolean;
   recurrence_type: 'monthly' | 'yearly' | null;
   tags: string[] | null;
   created_at: string;
+}
+
+export interface Account {
+  id: string;
+  family_group_id: string;
+  name: string;
+  balance: number;
+  is_primary: boolean;
 }
 
 export interface Budget {

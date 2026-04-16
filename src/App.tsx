@@ -13,6 +13,7 @@ import TransactionsPage from "@/pages/TransactionsPage";
 import BudgetsPage from "@/pages/BudgetsPage";
 import GoalsPage from "@/pages/GoalsPage";
 import DebtsPage from "@/pages/DebtsPage";
+import ChatPage from "@/pages/ChatPage";
 import SettingsPage from "@/pages/SettingsPage";
 import NotFound from "@/pages/NotFound";
 
@@ -41,6 +42,7 @@ function ProtectedRoutes() {
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/debts" element={<DebtsPage />} />
+        <Route path="/chat" element={<ChatPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

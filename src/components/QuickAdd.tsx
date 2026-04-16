@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTransactions, useCategories } from '@/hooks/useFinanceData';
+import { useState, useEffect, useRef } from 'react';
+import { useTransactions, useCategories, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,68 +9,22 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Plus, Zap, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Category } from '@/types/finance';
-
-// Parse smart input like "50 spesa cibo" or "+1500 stipendio"
-function parseSmartInput(input: string, categories: Category[]) {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  let type: 'income' | 'expense' = 'expense';
-  let rest = trimmed;
-
-  if (rest.startsWith('+')) {
-    type = 'income';
-    rest = rest.slice(1).trim();
-  } else if (rest.startsWith('-')) {
-    type = 'expense';
-    rest = rest.slice(1).trim();
-  }
-
-  // Extract amount (first number)
-  const amountMatch = rest.match(/^(\d+(?:[.,]\d+)?)/);
-  if (!amountMatch) return null;
-
-  const amount = parseFloat(amountMatch[1].replace(',', '.'));
-  rest = rest.slice(amountMatch[0].length).trim();
-
-  // Check for type keywords
-  const incomeWords = ['entrata', 'stipendio', 'income', 'salario', 'bonus'];
-  const expenseWords = ['spesa', 'expense', 'uscita'];
-  
-  const words = rest.toLowerCase().split(/\s+/);
-  for (const w of words) {
-    if (incomeWords.includes(w)) { type = 'income'; break; }
-    if (expenseWords.includes(w)) { type = 'expense'; break; }
-  }
-
-  // Try to match category
-  let matchedCategory: Category | null = null;
-  const relevantCategories = categories.filter(c => c.type === type);
-  
-  for (const cat of relevantCategories) {
-    if (words.some(w => cat.name.toLowerCase().includes(w) || w.includes(cat.name.toLowerCase()))) {
-      matchedCategory = cat;
-      break;
-    }
-  }
-
-  // Notes = remaining text after removing matched words
-  const notes = rest || null;
-
-  return { amount, type, category: matchedCategory, notes };
-}
+import { parseTransaction } from '@/lib/transactionParser';
+import { parseAndCreate } from '@/services/transactionService';
 
 export default function QuickAdd() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { addTransaction } = useTransactions();
+  const { addTransaction, refetch } = useTransactions();
   const categories = useCategories();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
 
-  const parsed = parseSmartInput(input, categories);
+  const parsed = parseTransaction(input, categories);
+  const defaultAccount = accounts.find(a => a.is_primary) || accounts[0];
 
   // Keyboard shortcut
   useEffect(() => {
@@ -105,22 +59,17 @@ export default function QuickAdd() {
   };
 
   const handleSubmit = async () => {
-    if (!parsed || !user || !currentFamilyGroupId) return;
+    if (!parsed || !user || !currentFamilyGroupId || !defaultAccount) return;
     try {
-      const catId = parsed.category?.id || null;
-      await addTransaction({
-        family_group_id: currentFamilyGroupId,
-        user_id: user.id,
-        category_id: catId,
-        amount: parsed.amount,
-        type: parsed.type,
-        date: new Date().toISOString().split('T')[0],
-        notes: parsed.notes,
-        recurring: false,
-        recurrence_type: null,
-        tags: null,
+      const result = await parseAndCreate({
+        text: input,
+        categories,
+        familyGroupId: currentFamilyGroupId,
+        userId: user.id,
+        accountId: defaultAccount.id,
       });
-      if (catId) saveRecentCategory(catId);
+      await refetch();
+      if (result.categoryId) saveRecentCategory(result.categoryId);
       toast.success('Transazione aggiunta!');
       setInput('');
       setOpen(false);
@@ -130,12 +79,16 @@ export default function QuickAdd() {
   };
 
   const handleQuickCategory = async (cat: Category) => {
-    if (!parsed?.amount || !user || !currentFamilyGroupId) return;
+    if (!parsed?.amount || !user || !currentFamilyGroupId || !defaultAccount) return;
     try {
       await addTransaction({
         family_group_id: currentFamilyGroupId,
         user_id: user.id,
+        created_by_user_id: user.id,
+        paid_by_user_id: user.id,
         category_id: cat.id,
+        account_id: defaultAccount.id,
+        to_account_id: null,
         amount: parsed.amount,
         type: cat.type,
         date: new Date().toISOString().split('T')[0],
@@ -211,10 +164,10 @@ export default function QuickAdd() {
                     {parsed.type === 'income' ? 'Entrata' : 'Spesa'}
                   </Badge>
                 </div>
-                {parsed.category && (
+                {parsed.categoryId && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: parsed.category.color }} />
-                    {parsed.category.name}
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: categories.find(c => c.id === parsed.categoryId)?.color || '#888' }} />
+                    {parsed.categoryName}
                   </div>
                 )}
                 {parsed.notes && <p className="text-xs text-muted-foreground">{parsed.notes}</p>}
@@ -243,7 +196,7 @@ export default function QuickAdd() {
             )}
 
             {/* All categories for type */}
-            {parsed?.amount && !parsed.category && (
+            {parsed?.amount && !parsed.categoryId && (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">Categorie {parsed.type === 'income' ? 'entrate' : 'spese'}:</p>
                 <div className="flex flex-wrap gap-1.5">

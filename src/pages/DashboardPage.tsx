@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useTransactions, useCategories, useBudgets, useGoals, useDebts } from '@/hooks/useFinanceData';
+import { useTransactions, useCategories, useBudgets, useGoals, useDebts, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const { budgets, loading: budLoading } = useBudgets();
   const { goals, loading: goalLoading, updateGoal } = useGoals();
   const { debts, loading: debtLoading, addDebt } = useDebts();
+  const { accounts } = useAccounts();
   const { user } = useAuth();
   const { currentFamilyGroupId } = useAppStore();
 
@@ -58,6 +59,20 @@ export default function DashboardPage() {
   const netBalance = totalIncome - totalExpense;
   const totalDebt = debts.filter(d => !d.is_paid).reduce((s, d) => s + Number(d.remaining_amount), 0);
   const totalSavings = goals.reduce((s, g) => s + Number(g.current_amount), 0);
+  const accountBalances = useMemo(() => {
+    const byAccount = new Map<string, number>();
+    accounts.forEach((a) => byAccount.set(a.id, Number(a.balance || 0)));
+    transactions.forEach((t) => {
+      const amount = Number(t.amount);
+      if (t.type === 'income') byAccount.set(t.account_id, (byAccount.get(t.account_id) || 0) + amount);
+      if (t.type === 'expense') byAccount.set(t.account_id, (byAccount.get(t.account_id) || 0) - amount);
+      if (t.type === 'transfer') {
+        byAccount.set(t.account_id, (byAccount.get(t.account_id) || 0) - amount);
+        if (t.to_account_id) byAccount.set(t.to_account_id, (byAccount.get(t.to_account_id) || 0) + amount);
+      }
+    });
+    return accounts.map((a) => ({ name: a.name, balance: byAccount.get(a.id) || 0 }));
+  }, [accounts, transactions]);
 
   // Advanced KPIs
   const dayOfMonth = getDate(now);
@@ -114,11 +129,20 @@ export default function DashboardPage() {
 
   const totalBudget = budgets.reduce((s, b) => s + Number(b.amount), 0);
   const budgetUsed = totalBudget > 0 ? Math.min(100, Math.round((totalExpense / totalBudget) * 100)) : 0;
+  const topSpender = useMemo(() => {
+    const spent = new Map<string, number>();
+    currentMonthTx
+      .filter((t) => t.type === 'expense')
+      .forEach((t) => spent.set(t.created_by_user_id, (spent.get(t.created_by_user_id) || 0) + Number(t.amount)));
+    const [userId, amount] = [...spent.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+    return userId ? { userId, amount: amount || 0 } : null;
+  }, [currentMonthTx]);
 
   const fmt = (n: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
 
   const handleQuickSubmit = async () => {
-    if (!user || !currentFamilyGroupId || !quickForm.amount) return;
+    const defaultAccountId = accounts.find(a => a.is_primary)?.id || accounts[0]?.id;
+    if (!user || !currentFamilyGroupId || !quickForm.amount || !defaultAccountId) return;
     const amount = parseFloat(quickForm.amount);
     if (isNaN(amount)) return;
 
@@ -127,7 +151,11 @@ export default function DashboardPage() {
         await addTransaction({
           family_group_id: currentFamilyGroupId,
           user_id: user.id,
+          created_by_user_id: user.id,
+          paid_by_user_id: user.id,
           category_id: quickForm.category_id || null,
+          account_id: defaultAccountId,
+          to_account_id: null,
           amount,
           type: quickAction,
           date: new Date().toISOString().split('T')[0],
@@ -224,6 +252,11 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+      {topSpender && (
+        <p className="text-xs text-muted-foreground">
+          Chi ha speso di più nel mese: <span className="font-medium">{topSpender.userId.slice(0, 8)}…</span> ({fmt(topSpender.amount)}).
+        </p>
+      )}
 
       {/* Quick Action Modal */}
       <Dialog open={!!quickAction} onOpenChange={(o) => !o && setQuickAction(null)}>
@@ -292,6 +325,22 @@ export default function DashboardPage() {
         totalIncome={totalIncome}
         totalExpense={totalExpense}
       />
+
+      <Card className="glass-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Saldi per account (famiglia)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {accountBalances.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nessun account configurato</p>
+          ) : accountBalances.map((a) => (
+            <div key={a.name} className="flex items-center justify-between text-sm">
+              <span>{a.name}</span>
+              <span className={a.balance >= 0 ? 'text-income font-medium' : 'text-expense font-medium'}>{fmt(a.balance)}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import DatePicker from '@/components/DatePicker';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Check } from 'lucide-react';
 import { format, parseISO, isPast } from 'date-fns';
@@ -92,7 +93,7 @@ export default function DebtsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Scadenza</Label>
-                <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
+                <DatePicker value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e }))} placeholder="Seleziona scadenza" isOptional />
               </div>
               <div className="space-y-2">
                 <Label>Note</Label>

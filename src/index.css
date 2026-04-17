@@ -94,4 +94,122 @@
   .glass-card {
     @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
   }
+
+  .app-main {
+    background:
+      radial-gradient(1200px 520px at 10% -15%, hsl(var(--primary) / 0.07), transparent 60%),
+      radial-gradient(1000px 480px at 90% -20%, hsl(var(--chart-2) / 0.05), transparent 58%),
+      hsl(var(--background));
+  }
+
+  .app-page {
+    @apply space-y-4 sm:space-y-5 lg:space-y-6;
+  }
+
+  .app-page h1 {
+    @apply text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-tight;
+  }
+
+  .app-page h2 {
+    @apply text-[15px] sm:text-lg font-semibold tracking-tight leading-snug;
+  }
+
+  .app-page h3 {
+    @apply text-sm sm:text-base font-semibold tracking-tight;
+  }
+
+  .app-page p {
+    @apply text-sm leading-relaxed;
+  }
+
+  .app-page .text-muted-foreground {
+    @apply leading-relaxed;
+  }
+
+  .app-page label {
+    @apply text-sm font-medium;
+  }
+
+  .app-page .card p {
+    text-wrap: pretty;
+  }
+
+  .card,
+  .app-page [class*='glass-card'] {
+    @apply border-border/80;
+  }
+
+  .app-page .grid {
+    @apply gap-3 sm:gap-4;
+  }
+
+  @media (min-width: 640px) {
+    .card > .p-3:not(.p-0):not(.pt-0) {
+      padding: 0.9375rem !important;
+    }
+
+    .card > .p-4:not(.p-0):not(.pt-0) {
+      padding: 1.125rem !important;
+    }
+
+    .card > .space-y-2 {
+      row-gap: 0.625rem;
+    }
+
+    .card > .space-y-3 {
+      row-gap: 0.875rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .card > .p-3:not(.p-0):not(.pt-0) {
+      padding: 0.9375rem !important;
+    }
+
+    .card > .p-4:not(.p-0):not(.pt-0) {
+      padding: 1.125rem !important;
+    }
+
+    .card > .space-y-2 {
+      row-gap: 0.625rem;
+    }
+
+    .card > .space-y-3 {
+      row-gap: 0.875rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .card > .p-3:not(.p-0):not(.pt-0) {
+      padding: 1.125rem !important;
+    }
+
+    .card > .p-4:not(.p-0):not(.pt-0) {
+      padding: 1.5rem !important;
+    }
+
+    .card > .space-y-2 {
+      row-gap: 0.875rem;
+    }
+
+    .card > .space-y-3 {
+      row-gap: 1.125rem;
+    }
+  }
+
+  /* Avoid browser focus outlines on SVG chart internals when clicking bars/lines/sectors */
+  .recharts-wrapper:focus,
+  .recharts-wrapper:focus-visible,
+  .recharts-surface:focus,
+  .recharts-surface:focus-visible,
+  .recharts-layer:focus,
+  .recharts-layer:focus-visible,
+  .recharts-sector:focus,
+  .recharts-sector:focus-visible,
+  .recharts-rectangle:focus,
+  .recharts-rectangle:focus-visible,
+  .recharts-dot:focus,
+  .recharts-dot:focus-visible {
+    outline: none !important;
+  }
 }

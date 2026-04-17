@@ -118,7 +118,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(1200px_540px_at_85%_-18%,hsl(var(--chart-2)/0.08),transparent_58%),hsl(var(--background))] p-3 sm:p-4">
       {step === 'group' ? (
         <Card className="w-full max-w-md animate-fade-in">
           <CardHeader className="text-center space-y-2">

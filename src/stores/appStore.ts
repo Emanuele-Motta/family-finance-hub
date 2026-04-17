@@ -11,7 +11,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   currentFamilyGroupId: null,
   setCurrentFamilyGroupId: (id) => set({ currentFamilyGroupId: id }),
-  sidebarOpen: true,
+  sidebarOpen: false,
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 }));

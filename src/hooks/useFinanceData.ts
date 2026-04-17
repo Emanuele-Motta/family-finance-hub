@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/stores/appStore';
-import type { Transaction, Category, Budget, Goal, Debt, Account } from '@/types/finance';
+import { createRecurringTemplate, generateRecurringOccurrences, updateRecurringTemplate } from '@/services/recurringService';
+import { addOfflineChange } from '@/services/backupService';
+import type { Transaction, Category, Budget, Goal, Debt, Account, RecurringTemplate } from '@/types/finance';
 
 export function useTransactions() {
   const { currentFamilyGroupId } = useAppStore();
@@ -9,32 +11,49 @@ export function useTransactions() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
+    if (!currentFamilyGroupId) {
+      setTransactions([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const { data } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId)
-      .order('date', { ascending: false });
-    setTransactions((data as Transaction[]) || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId)
+        .order('date', { ascending: false });
+      setTransactions((data as Transaction[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [currentFamilyGroupId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const addTransaction = async (t: Omit<Transaction, 'id' | 'created_at'>) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      addOfflineChange({ type: 'transaction', action: 'create', data: t as Record<string, unknown> });
+    }
     const { error } = await supabase.from('transactions').insert(t as any);
     if (error) throw error;
     await fetch();
   };
 
   const updateTransaction = async (id: string, t: Partial<Transaction>) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      addOfflineChange({ type: 'transaction', action: 'update', data: { id, ...t } as Record<string, unknown> });
+    }
     const { error } = await supabase.from('transactions').update(t as any).eq('id', id);
     if (error) throw error;
     await fetch();
   };
 
   const deleteTransaction = async (id: string) => {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      addOfflineChange({ type: 'transaction', action: 'delete', data: { id } });
+    }
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) throw error;
     await fetch();
@@ -49,7 +68,15 @@ export function useCategories() {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase.from('categories').select('*');
+      if (!currentFamilyGroupId) {
+        setCategories([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId);
       setCategories((data as Category[]) || []);
     };
     fetch();
@@ -64,14 +91,22 @@ export function useBudgets() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
+    if (!currentFamilyGroupId) {
+      setBudgets([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const { data } = await supabase
-      .from('budgets')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setBudgets((data as Budget[]) || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId);
+      setBudgets((data as Budget[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [currentFamilyGroupId]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -103,14 +138,22 @@ export function useGoals() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
+    if (!currentFamilyGroupId) {
+      setGoals([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const { data } = await supabase
-      .from('goals')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setGoals((data as Goal[]) || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId);
+      setGoals((data as Goal[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [currentFamilyGroupId]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -142,14 +185,22 @@ export function useDebts() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
+    if (!currentFamilyGroupId) {
+      setDebts([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    const { data } = await supabase
-      .from('debts')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setDebts((data as Debt[]) || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId);
+      setDebts((data as Debt[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [currentFamilyGroupId]);
 
   useEffect(() => { fetch(); }, [fetch]);
@@ -181,19 +232,85 @@ export function useAccounts() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
+    if (!currentFamilyGroupId) {
+      setAccounts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId)
+        .order('is_primary', { ascending: false })
+        .order('name', { ascending: true });
+      setAccounts((data as Account[]) || []);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentFamilyGroupId]);
+
+  useEffect(() => { fetch(); }, [fetch]);
+
+  const updateAccount = async (id: string, account: Partial<Account>) => {
+    const { error } = await supabase.from('accounts').update(account as any).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  };
+
+  return { accounts, loading, updateAccount, refetch: fetch };
+}
+
+export function useRecurringTemplates() {
+  const { currentFamilyGroupId } = useAppStore();
+  const [templates, setTemplates] = useState<RecurringTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetch = useCallback(async () => {
+    if (!currentFamilyGroupId) {
+      setTemplates([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const { data } = await supabase
-      .from('accounts')
+      .from('recurring_templates')
       .select('*')
       .eq('family_group_id', currentFamilyGroupId)
-      .order('is_primary', { ascending: false })
-      .order('name', { ascending: true });
-    setAccounts((data as Account[]) || []);
+      .order('is_active', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    setTemplates((data as RecurringTemplate[]) || []);
     setLoading(false);
   }, [currentFamilyGroupId]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
-  return { accounts, loading, refetch: fetch };
+  const addTemplate = async (template: Omit<RecurringTemplate, 'id' | 'created_at' | 'updated_at'>) => {
+    await createRecurringTemplate(template);
+    await fetch();
+  };
+
+  const updateTemplate = async (id: string, updates: Partial<RecurringTemplate>) => {
+    if (!currentFamilyGroupId) return;
+    await updateRecurringTemplate(id, updates);
+    await generateRecurringOccurrences(id, currentFamilyGroupId);
+    await fetch();
+  };
+
+  const toggleTemplate = async (id: string, isActive: boolean) => {
+    await updateTemplate(id, { is_active: isActive });
+  };
+
+  const deleteTemplate = async (id: string) => {
+    await supabase.from('recurring_occurrences').delete().eq('template_id', id);
+    const { error } = await supabase.from('recurring_templates').delete().eq('id', id);
+    if (error) throw error;
+    await fetch();
+  };
+
+  return { templates, loading, addTemplate, updateTemplate, toggleTemplate, deleteTemplate, refetch: fetch };
 }

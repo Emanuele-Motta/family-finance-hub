@@ -193,6 +193,7 @@ export type Database = {
       }
       family_groups: {
         Row: {
+          car_expenses_settings: Record<string, unknown> | null
           created_at: string
           id: string
           invite_code: string
@@ -200,6 +201,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          car_expenses_settings?: Record<string, unknown> | null
           created_at?: string
           id?: string
           invite_code?: string
@@ -207,6 +209,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          car_expenses_settings?: Record<string, unknown> | null
           created_at?: string
           id?: string
           invite_code?: string
@@ -292,6 +295,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          dashboard_kpis: string[] | null
           display_name: string | null
           id: string
           language: string
@@ -302,6 +306,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          dashboard_kpis?: string[] | null
           display_name?: string | null
           id?: string
           language?: string
@@ -312,6 +317,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          dashboard_kpis?: string[] | null
           display_name?: string | null
           id?: string
           language?: string
@@ -320,6 +326,171 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recurring_occurrences: {
+        Row: {
+          created_at: string
+          family_group_id: string
+          id: string
+          occurrence_date: string
+          skip_reason: string | null
+          status: string
+          template_id: string
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          family_group_id: string
+          id?: string
+          occurrence_date: string
+          skip_reason?: string | null
+          status?: string
+          template_id: string
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          occurrence_date?: string
+          skip_reason?: string | null
+          status?: string
+          template_id?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_occurrences_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_occurrences_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_occurrences_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_templates: {
+        Row: {
+          account_id: string
+          amount: number
+          category_id: string | null
+          created_at: string
+          created_by: string
+          day_of_month: number | null
+          day_of_week: string | null
+          description: string | null
+          ends_at: string | null
+          family_group_id: string
+          frequency: string
+          id: string
+          interval: number
+          is_active: boolean
+          max_occurrences: number | null
+          months: string[] | null
+          name: string
+          notify_days_before: number | null
+          notify_method: string | null
+          starts_at: string
+          tags: string[] | null
+          to_account_id: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          created_by: string
+          day_of_month?: number | null
+          day_of_week?: string | null
+          description?: string | null
+          ends_at?: string | null
+          family_group_id: string
+          frequency: string
+          id?: string
+          interval?: number
+          is_active?: boolean
+          max_occurrences?: number | null
+          months?: string[] | null
+          name: string
+          notify_days_before?: number | null
+          notify_method?: string | null
+          starts_at: string
+          tags?: string[] | null
+          to_account_id?: string | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          created_by?: string
+          day_of_month?: number | null
+          day_of_week?: string | null
+          description?: string | null
+          ends_at?: string | null
+          family_group_id?: string
+          frequency?: string
+          id?: string
+          interval?: number
+          is_active?: boolean
+          max_occurrences?: number | null
+          months?: string[] | null
+          name?: string
+          notify_days_before?: number | null
+          notify_method?: string | null
+          starts_at?: string
+          tags?: string[] | null
+          to_account_id?: string | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_templates_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_templates_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_templates_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_templates_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

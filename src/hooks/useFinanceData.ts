@@ -3,44 +3,89 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/stores/appStore';
 import type { Transaction, Category, Budget, Goal, Debt, Account } from '@/types/finance';
 
-export function useTransactions() {
+type WithId = { id: string };
+type Insertable<T> = Omit<T, 'id' | 'created_at'>;
+type CrudHookReturn<T extends WithId> = {
+  data: T[];
+  loading: boolean;
+  add: (item: Insertable<T>) => Promise<void>;
+  update: (id: string, item: Partial<T>) => Promise<void>;
+  remove: (id: string) => Promise<void>;
+  refetch: () => Promise<void>;
+};
+
+function useFamilyCrudData<T extends WithId>(
+  tableName: string,
+  options?: { orderByDateDesc?: boolean },
+): CrudHookReturn<T> {
   const { currentFamilyGroupId } = useAppStore();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId)
-      .order('date', { ascending: false });
-    setTransactions((data as Transaction[]) || []);
-    setLoading(false);
-  }, [currentFamilyGroupId]);
+    if (!currentFamilyGroupId) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
 
-  useEffect(() => { fetch(); }, [fetch]);
+    setLoading(true);
+
+    let query = supabase.from(tableName).select('*').eq('family_group_id', currentFamilyGroupId);
+    if (options?.orderByDateDesc) {
+      query = query.order('date', { ascending: false });
+    }
+
+    const { data: rows, error } = await query;
+    if (error) throw error;
+
+    setData((rows as T[]) || []);
+    setLoading(false);
+  }, [currentFamilyGroupId, options?.orderByDateDesc, tableName]);
+
+  useEffect(() => {
+    fetch().catch(() => setLoading(false));
+  }, [fetch]);
+
+  const add = async (item: Insertable<T>) => {
+    const { error } = await supabase.from(tableName).insert(item as any);
+    if (error) throw error;
+    await fetch();
+  };
+
+  const update = async (id: string, item: Partial<T>) => {
+    const { error } = await supabase.from(tableName).update(item as any).eq('id', id);
+    if (error) throw error;
+    await fetch();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from(tableName).delete().eq('id', id);
+    if (error) throw error;
+    await fetch();
+  };
+
+  return { data, loading, add, update, remove, refetch: fetch };
+}
+
+export function useTransactions() {
+  const { data, loading, add, update, remove, refetch } = useFamilyCrudData<Transaction>(
+    'transactions',
+    { orderByDateDesc: true },
+  );
 
   const addTransaction = async (t: Omit<Transaction, 'id' | 'created_at'>) => {
-    const { error } = await supabase.from('transactions').insert(t as any);
-    if (error) throw error;
-    await fetch();
+    await add(t);
   };
 
-  const updateTransaction = async (id: string, t: Partial<Transaction>) => {
-    const { error } = await supabase.from('transactions').update(t as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
+  return {
+    transactions: data,
+    loading,
+    addTransaction,
+    updateTransaction: update,
+    deleteTransaction: remove,
+    refetch,
   };
-
-  const deleteTransaction = async (id: string) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { transactions, loading, addTransaction, updateTransaction, deleteTransaction, refetch: fetch };
 }
 
 export function useCategories() {
@@ -59,120 +104,42 @@ export function useCategories() {
 }
 
 export function useBudgets() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, add, update, remove, refetch } = useFamilyCrudData<Budget>('budgets');
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('budgets')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setBudgets((data as Budget[]) || []);
-    setLoading(false);
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addBudget = async (b: Omit<Budget, 'id'>) => {
-    const { error } = await supabase.from('budgets').insert(b as any);
-    if (error) throw error;
-    await fetch();
+  return {
+    budgets: data,
+    loading,
+    addBudget: add,
+    updateBudget: update,
+    deleteBudget: remove,
+    refetch,
   };
-
-  const updateBudget = async (id: string, b: Partial<Budget>) => {
-    const { error } = await supabase.from('budgets').update(b as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteBudget = async (id: string) => {
-    const { error } = await supabase.from('budgets').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { budgets, loading, addBudget, updateBudget, deleteBudget, refetch: fetch };
 }
 
 export function useGoals() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, add, update, remove, refetch } = useFamilyCrudData<Goal>('goals');
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('goals')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setGoals((data as Goal[]) || []);
-    setLoading(false);
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addGoal = async (g: Omit<Goal, 'id'>) => {
-    const { error } = await supabase.from('goals').insert(g as any);
-    if (error) throw error;
-    await fetch();
+  return {
+    goals: data,
+    loading,
+    addGoal: add,
+    updateGoal: update,
+    deleteGoal: remove,
+    refetch,
   };
-
-  const updateGoal = async (id: string, g: Partial<Goal>) => {
-    const { error } = await supabase.from('goals').update(g as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteGoal = async (id: string) => {
-    const { error } = await supabase.from('goals').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { goals, loading, addGoal, updateGoal, deleteGoal, refetch: fetch };
 }
 
 export function useDebts() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, add, update, remove, refetch } = useFamilyCrudData<Debt>('debts');
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('debts')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId);
-    setDebts((data as Debt[]) || []);
-    setLoading(false);
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addDebt = async (d: Omit<Debt, 'id'>) => {
-    const { error } = await supabase.from('debts').insert(d as any);
-    if (error) throw error;
-    await fetch();
+  return {
+    debts: data,
+    loading,
+    addDebt: add,
+    updateDebt: update,
+    deleteDebt: remove,
+    refetch,
   };
-
-  const updateDebt = async (id: string, d: Partial<Debt>) => {
-    const { error } = await supabase.from('debts').update(d as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteDebt = async (id: string) => {
-    const { error } = await supabase.from('debts').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { debts, loading, addDebt, updateDebt, deleteDebt, refetch: fetch };
 }
 
 export function useAccounts() {

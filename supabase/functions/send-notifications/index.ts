@@ -109,7 +109,7 @@ serve(async req => {
           .from('notifications')
           .update({
             delivery_status: 'failed',
-            delivery_error: err.message,
+            delivery_error: (err as Error).message,
           })
           .eq('id', notif.id);
 
@@ -137,7 +137,7 @@ serve(async req => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: (error as Error).message,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

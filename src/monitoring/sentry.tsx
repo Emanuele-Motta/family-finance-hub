@@ -83,7 +83,7 @@ export class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log to Sentry
-    Sentry.captureException(error, { contexts: { react: errorInfo } });
+    Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
   }
 
   render() {

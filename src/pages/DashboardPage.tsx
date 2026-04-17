@@ -90,7 +90,7 @@ export default function DashboardPage() {
   // Sync KPI prefs from Supabase on mount
   useEffect(() => {
     if (!user) return;
-    supabase.from('profiles').select('dashboard_kpis').eq('user_id', user.id).single().then(({ data }) => {
+    (supabase.from('profiles') as any).select('dashboard_kpis').eq('user_id', user.id).single().then(({ data }: { data: any }) => {
       if (data?.dashboard_kpis && Array.isArray(data.dashboard_kpis) && data.dashboard_kpis.length > 0) {
         const kpisFromDb = data.dashboard_kpis as KpiId[];
         setVisibleKpis(kpisFromDb);
@@ -593,7 +593,7 @@ export default function DashboardPage() {
       const next = prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id];
       localStorage.setItem(KPI_PREFS_KEY, JSON.stringify(next));
       if (user) {
-        supabase.from('profiles').update({ dashboard_kpis: next }).eq('user_id', user.id);
+        (supabase.from('profiles') as any).update({ dashboard_kpis: next }).eq('user_id', user.id);
       }
       return next;
     });

@@ -340,7 +340,7 @@ export default function CarExpensesPage() {
 
             <div className="space-y-1">
               <Label>Data</Label>
-              <DatePicker required value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} placeholder="Seleziona data" />
+              <DatePicker value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} placeholder="Seleziona data" />
             </div>
 
             <div className="space-y-1">

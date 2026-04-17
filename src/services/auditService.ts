@@ -39,7 +39,7 @@ export async function logAuditEvent(
     });
 
   if (error) throw error;
-  return data as AuditLog;
+  return data as unknown as AuditLog;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function createRecordVersion(
     });
 
   if (error) throw error;
-  return version as RecordVersion;
+  return version as unknown as RecordVersion;
 }
 
 /**

@@ -190,10 +190,10 @@ export async function syncOfflineChanges(familyGroupId: string): Promise<SyncRes
           if (error) throw error;
         } else if (change.action === 'update') {
           const { id, ...data } = change.data;
-          const { error } = await supabase.from('transactions').update(data as any).eq('id', id);
+          const { error } = await supabase.from('transactions').update(data as any).eq('id', id as string);
           if (error) throw error;
         } else if (change.action === 'delete') {
-          const { error } = await supabase.from('transactions').delete().eq('id', change.data.id);
+          const { error } = await supabase.from('transactions').delete().eq('id', change.data.id as string);
           if (error) throw error;
         }
         result.synced++;

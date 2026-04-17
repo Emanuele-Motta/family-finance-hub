@@ -2,7 +2,9 @@
 // Test suite for rules automation service
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { evaluateRule, applyRuleActions } from '@/services/rulesService';
+import { evaluateRule as evaluateRuleRaw, applyRuleActions as applyRuleActionsRaw } from '@/services/rulesService';
+const evaluateRule = evaluateRuleRaw as unknown as (rule: any, tx: any) => boolean;
+const applyRuleActions = applyRuleActionsRaw as unknown as (rule: any, tx: any) => { category_id?: string; tags?: string[] };
 import type { TransactionRule } from '@/types/finance';
 
 describe('Rules Automation Service', () => {

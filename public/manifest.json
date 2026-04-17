@@ -1,0 +1,72 @@
+{
+  "name": "FamilyFinance - Family Budget Hub",
+  "short_name": "FamilyFinance",
+  "description": "Manage household finances with modern UX - budgets, transactions, goals, and debts all in one place.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "theme_color": "#1BC997",
+  "background_color": "#222e3b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "maskable",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Add",
+      "short_name": "Aggiungi",
+      "description": "Inserisci una spesa al volo",
+      "url": "/?quickAdd=1",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Saldo",
+      "short_name": "Saldo",
+      "description": "Apri dashboard saldo",
+      "url": "/?view=balance",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your financial dashboard",
+      "url": "/",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Transazioni",
+      "short_name": "Transazioni",
+      "description": "Manage transactions",
+      "url": "/transactions",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Budget",
+      "short_name": "Budget",
+      "description": "Create and manage budgets",
+      "url": "/budgets",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1BC997;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15a785;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2fc9ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1BC997;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <rect width="128" height="128" fill="url(#bgGradient)" rx="24"/>
+  
+  <!-- Wallet shape -->
+  <g transform="translate(32, 32)">
+    <!-- Card/wallet body -->
+    <rect x="4" y="8" width="56" height="48" rx="6" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+    
+    <!-- Wallet flap -->
+    <path d="M 4 20 L 4 12 Q 4 8 8 8 L 56 8 Q 60 8 60 12 L 60 20 Q 32 26 4 20 Z" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+    
+    <!-- Coins indicator -->
+    <circle cx="24" cy="32" r="5" fill="url(#accentGradient)" opacity="0.9"/>
+    <circle cx="40" cy="36" r="4" fill="url(#accentGradient)" opacity="0.7"/>
+    <circle cx="32" cy="44" r="3.5" fill="url(#accentGradient)" opacity="0.5"/>
+  </g>
+  
+  <!-- Accent corner accent -->
+  <circle cx="104" cy="24" r="6" fill="rgba(47, 201, 255, 0.3)"/>
+</svg>

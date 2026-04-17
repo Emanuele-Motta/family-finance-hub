@@ -12,6 +12,7 @@ const createTransactionSchema = z.object({
   date: z.string(),
   categoryId: z.string().uuid().nullable().optional(),
   notes: z.string().nullable().optional(),
+  tags: z.array(z.string()).nullable().optional(),
 });
 
 const createTransferSchema = z.object({
@@ -41,7 +42,7 @@ export async function createTransaction(input: z.input<typeof createTransactionS
     notes: payload.notes ?? null,
     recurring: false,
     recurrence_type: null,
-    tags: null,
+    tags: payload.tags ?? null,
   } as never);
 
   if (error) throw error;

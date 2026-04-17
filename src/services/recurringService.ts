@@ -3,19 +3,15 @@
 // Recurring transactions service: advanced scheduling for recurring payments, subscriptions, and reminders
 // Supports complex frequency patterns and smart date calculation
 
-import { 
-  addDays, 
-  addMonths, 
-  addYears, 
-  startOfMonth,
+import {
+  addDays,
+  addMonths,
+  addYears,
   endOfMonth,
   setDate,
   isBefore,
   isAfter,
   format,
-  parse,
-  eachDayOfInterval,
-  eachMonthOfInterval,
 } from 'date-fns';
 import type { 
   RecurringTemplate,
@@ -89,21 +85,29 @@ export function generateOccurrences(
 ): Date[] {
   const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
   const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
+  const templateStart = new Date(template.starts_at);
+  const templateEnd = template.ends_at ? new Date(template.ends_at) : null;
 
   const occurrences: Date[] = [];
-  let current = start;
+  let current = templateStart;
   let count = 0;
 
+  while (isBefore(current, start)) {
+    current = calculateNextOccurrence(template, current);
+  }
+
   while (
-    isBefore(current, end) &&
+    !isAfter(current, end) &&
     (!template.max_occurrences || count < template.max_occurrences)
   ) {
-    if (isAfter(current, new Date(template.starts_at))) {
+    const isWithinTemplateWindow = !isBefore(current, templateStart) && (!templateEnd || !isAfter(current, templateEnd));
+
+    if (isWithinTemplateWindow) {
       occurrences.push(new Date(current));
       count++;
     }
 
-    if (template.ends_at && isAfter(current, new Date(template.ends_at))) {
+    if (templateEnd && isAfter(current, templateEnd)) {
       break;
     }
 
@@ -127,7 +131,7 @@ export async function createRecurringTemplate(
 
   if (error) throw error;
 
-  const created = data as RecurringTemplate;
+  const created = data as unknown as RecurringTemplate;
 
   // Generate initial occurrences
   const futureDate = new Date();
@@ -163,7 +167,7 @@ export async function updateRecurringTemplate(
     .single();
 
   if (error) throw error;
-  return data as RecurringTemplate;
+  return data as unknown as RecurringTemplate;
 }
 
 /**
@@ -182,7 +186,7 @@ export async function generateRecurringOccurrences(
 
   if (templateError) throw templateError;
 
-  const tmpl = template as RecurringTemplate;
+  const tmpl = template as unknown as RecurringTemplate;
   const today = new Date();
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + daysAhead);
@@ -195,7 +199,8 @@ export async function generateRecurringOccurrences(
     .select('occurrence_date')
     .eq('template_id', templateId);
 
-  const existingDates = new Set((existing as any[])?.map(o => o.occurrence_date));
+  const existingOccurrences = (existing as { occurrence_date: string }[] | null) || [];
+  const existingDates = new Set(existingOccurrences.map((occurrence) => occurrence.occurrence_date));
 
   // Insert only new occurrences
   const newOccurrences = occurrences
@@ -217,7 +222,7 @@ export async function generateRecurringOccurrences(
     .select();
 
   if (insertError) throw insertError;
-  return (inserted as RecurringOccurrence[]) || [];
+  return ((inserted as unknown as RecurringOccurrence[]) || []);
 }
 
 /**
@@ -236,8 +241,8 @@ export async function createTransactionFromRecurrence(
 
   if (occError) throw occError;
 
-  const occ = occurrence as any;
-  const template = occ.recurring_templates as RecurringTemplate;
+  const occ = occurrence as unknown as RecurringOccurrence & { recurring_templates: RecurringTemplate };
+  const template = occ.recurring_templates;
 
   // Create transaction
   const transactionData = {
@@ -254,7 +259,7 @@ export async function createTransactionFromRecurrence(
     notes: template.description,
     tags: template.tags,
     recurring: true,
-    recurrence_type: template.frequency,
+    recurrence_type: template.frequency === 'monthly' || template.frequency === 'yearly' ? template.frequency : null,
   };
 
   const { data: transaction, error: txError } = await supabase
@@ -298,7 +303,7 @@ export async function getPendingOccurrences(
     .order('occurrence_date', { ascending: true });
 
   if (error) throw error;
-  return (data as any[]) || [];
+  return ((data as unknown as (RecurringOccurrence & { template: RecurringTemplate })[]) || []);
 }
 
 /**
@@ -368,7 +373,7 @@ export async function getRecurringStats(
   let monthlyProjected = 0;
 
   if (templates) {
-    for (const t of templates as RecurringTemplate[]) {
+    for (const t of templates as unknown as RecurringTemplate[]) {
       if (t.frequency === 'daily') {
         monthlyProjected += t.amount * 30;
       } else if (t.frequency === 'weekly') {
@@ -412,18 +417,26 @@ export function createMonthlyTemplate(params: {
   return {
     family_group_id: params.familyGroupId,
     name: params.name,
+    description: params.description,
     frequency: 'monthly',
     interval: 1,
     day_of_month: params.dayOfMonth,
+    day_of_week: null,
+    months: null,
     category_id: params.category_id,
     account_id: params.account_id,
+    to_account_id: null,
     amount: params.amount,
     type: 'expense',
-    description: params.description,
+    tags: null,
     starts_at: format(new Date(), 'yyyy-MM-dd'),
+    ends_at: null,
+    max_occurrences: null,
+    notify_days_before: null,
+    notify_method: null,
     is_active: true,
     created_by: params.created_by,
-  } as any;
+  };
 }
 
 /**
@@ -441,19 +454,24 @@ export function createSubscriptionTemplate(params: {
   return {
     family_group_id: params.familyGroupId,
     name: `Subscription: ${params.serviceName}`,
+    description: `${params.serviceName} subscription`,
     frequency: 'monthly',
     interval: 1,
     day_of_month: params.billingDay,
+    day_of_week: null,
+    months: null,
     category_id: params.category_id,
     account_id: params.account_id,
+    to_account_id: null,
     amount: params.amount,
     type: 'expense',
-    description: `${params.serviceName} subscription`,
     tags: ['subscription'],
     starts_at: format(new Date(), 'yyyy-MM-dd'),
+    ends_at: null,
+    max_occurrences: null,
     notify_days_before: 3,
     notify_method: 'all',
     is_active: true,
     created_by: params.created_by,
-  } as any;
+  };
 }

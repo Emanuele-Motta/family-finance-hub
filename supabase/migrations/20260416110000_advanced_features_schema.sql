@@ -39,6 +39,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON public.audit_logs(entity_typ
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at);
 
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view family audit logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Only system can insert audit logs" ON public.audit_logs;
 CREATE POLICY "Members can view family audit logs"
   ON public.audit_logs FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -65,6 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_record_versions_record ON public.record_versions(
 CREATE INDEX IF NOT EXISTS idx_record_versions_changed_by ON public.record_versions(changed_by);
 
 ALTER TABLE public.record_versions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view record versions" ON public.record_versions;
 CREATE POLICY "Members can view record versions"
   ON public.record_versions FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -93,6 +96,8 @@ CREATE INDEX IF NOT EXISTS idx_import_batches_account ON public.import_batches(a
 CREATE INDEX IF NOT EXISTS idx_import_batches_status ON public.import_batches(status);
 
 ALTER TABLE public.import_batches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view import batches" ON public.import_batches;
+DROP POLICY IF EXISTS "Members can manage import batches" ON public.import_batches;
 CREATE POLICY "Members can view import batches"
   ON public.import_batches FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -129,6 +134,8 @@ CREATE INDEX IF NOT EXISTS idx_import_pending_family ON public.import_pending_tr
 CREATE INDEX IF NOT EXISTS idx_import_pending_status ON public.import_pending_transactions(status);
 
 ALTER TABLE public.import_pending_transactions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view pending imports" ON public.import_pending_transactions;
+DROP POLICY IF EXISTS "Members can edit pending imports" ON public.import_pending_transactions;
 CREATE POLICY "Members can view pending imports"
   ON public.import_pending_transactions FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -156,6 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_reconciliations_import ON public.reconciliations(
 CREATE INDEX IF NOT EXISTS idx_reconciliations_matched ON public.reconciliations(matched_transaction_id);
 
 ALTER TABLE public.reconciliations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view reconciliations" ON public.reconciliations;
 CREATE POLICY "Members can view reconciliations"
   ON public.reconciliations FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -196,6 +204,8 @@ CREATE INDEX IF NOT EXISTS idx_transaction_rules_family ON public.transaction_ru
 CREATE INDEX IF NOT EXISTS idx_transaction_rules_active ON public.transaction_rules(family_group_id, is_active);
 
 ALTER TABLE public.transaction_rules ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view rules" ON public.transaction_rules;
+DROP POLICY IF EXISTS "Admins can manage rules" ON public.transaction_rules;
 CREATE POLICY "Members can view rules"
   ON public.transaction_rules FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -262,6 +272,8 @@ CREATE INDEX IF NOT EXISTS idx_recurring_family ON public.recurring_templates(fa
 CREATE INDEX IF NOT EXISTS idx_recurring_active ON public.recurring_templates(family_group_id, is_active);
 
 ALTER TABLE public.recurring_templates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view recurring" ON public.recurring_templates;
+DROP POLICY IF EXISTS "Members can manage recurring" ON public.recurring_templates;
 CREATE POLICY "Members can view recurring"
   ON public.recurring_templates FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -314,6 +326,7 @@ CREATE INDEX IF NOT EXISTS idx_cashflow_account ON public.cashflow_forecasts(acc
 CREATE INDEX IF NOT EXISTS idx_cashflow_date ON public.cashflow_forecasts(forecast_date);
 
 ALTER TABLE public.cashflow_forecasts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view forecasts" ON public.cashflow_forecasts;
 CREATE POLICY "Members can view forecasts"
   ON public.cashflow_forecasts FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -345,6 +358,8 @@ CREATE INDEX IF NOT EXISTS idx_comments_transaction ON public.transaction_commen
 CREATE INDEX IF NOT EXISTS idx_comments_user ON public.transaction_comments(user_id);
 
 ALTER TABLE public.transaction_comments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view comments" ON public.transaction_comments;
+DROP POLICY IF EXISTS "Members can create comments" ON public.transaction_comments;
 CREATE POLICY "Members can view comments"
   ON public.transaction_comments FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -370,6 +385,7 @@ CREATE INDEX IF NOT EXISTS idx_approvals_transaction ON public.transaction_appro
 CREATE INDEX IF NOT EXISTS idx_approvals_status ON public.transaction_approvals(family_group_id, status);
 
 ALTER TABLE public.transaction_approvals ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view approvals" ON public.transaction_approvals;
 CREATE POLICY "Members can view approvals"
   ON public.transaction_approvals FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));
@@ -404,6 +420,8 @@ CREATE INDEX IF NOT EXISTS idx_notifications_family ON public.notifications(fami
 CREATE INDEX IF NOT EXISTS idx_notifications_status ON public.notifications(status);
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
+DROP POLICY IF EXISTS "Users can mark own notifications read" ON public.notifications;
 CREATE POLICY "Users can view own notifications"
   ON public.notifications FOR SELECT
   USING (user_id = auth.uid());
@@ -436,6 +454,7 @@ CREATE INDEX IF NOT EXISTS idx_anomalies_transaction ON public.anomalies(transac
 CREATE INDEX IF NOT EXISTS idx_anomalies_severity ON public.anomalies(family_group_id, severity);
 
 ALTER TABLE public.anomalies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Members can view anomalies" ON public.anomalies;
 CREATE POLICY "Members can view anomalies"
   ON public.anomalies FOR SELECT
   USING (family_group_id IN (SELECT public.get_user_family_ids(auth.uid())));

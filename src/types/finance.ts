@@ -74,6 +74,42 @@ export interface Goal {
   deadline: string | null;
 }
 
+export interface TransactionRule {
+  id: string;
+  family_group_id: string;
+  name: string;
+  enabled: boolean;
+  priority: number;
+  conditionLogic: 'and' | 'or';
+  conditions: {
+    keywords?: string[];
+    minAmount?: number;
+    maxAmount?: number;
+    categoryIds?: string[];
+    types?: ('income' | 'expense' | 'transfer')[];
+  };
+  actions: {
+    setCategoryId?: string;
+    addTags?: string[];
+    setType?: 'income' | 'expense';
+    skipIfMatched?: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransactionAuditEntry {
+  id: string;
+  family_group_id: string;
+  transaction_id: string | null;
+  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  old_values: Record<string, any> | null;
+  new_values: Record<string, any> | null;
+  user_id: string | null;
+  trigger_source: 'manual' | 'trigger' | 'automation';
+  created_at: string;
+}
+
 export interface Debt {
   id: string;
   family_group_id: string;
@@ -173,32 +209,8 @@ export interface Reconciliation {
 
 // ============================================================================
 // AUTOMATIC RULES
+// (unified with TransactionRule interface above)
 // ============================================================================
-
-export interface RuleCondition {
-  field: string; // 'description', 'amount', 'date', 'type', 'account_id', 'tags', etc.
-  operator: 'contains' | 'not_contains' | 'equals' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'not_in' | 'regex';
-  value: any;
-}
-
-export interface TransactionRule {
-  id: string;
-  family_group_id: string;
-  name: string;
-  description: string | null;
-  is_active: boolean;
-  priority: number;
-  condition_type: 'all_match' | 'any_match';
-  conditions: RuleCondition[];
-  category_id: string | null;
-  tags: string[] | null;
-  account_id: string | null;
-  auto_apply: boolean;
-  require_review: boolean;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface RuleApplication {
   id: string;
@@ -221,19 +233,18 @@ export interface RecurringTemplate {
   family_group_id: string;
   name: string;
   description: string | null;
-  
+
   frequency: RecurrenceFrequency;
   interval: number;
   day_of_month: number | null;
   day_of_week: DayOfWeek | null;
   months: string[] | null;
-  
+
   category_id: string | null;
   account_id: string;
   to_account_id: string | null;
   amount: number;
   type: 'income' | 'expense' | 'transfer';
-  description: string;
   tags: string[] | null;
   
   starts_at: string;

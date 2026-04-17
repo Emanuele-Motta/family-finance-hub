@@ -52,11 +52,16 @@ export function parseTransaction(text: string, categories: Array<{ name: string;
     }
   }
 
+  const reason = categoryName
+    ? `Categoria riconosciuta dal testo: ${categoryName}`
+    : `Importo e tipo riconosciuti, ma nessuna categoria precisa trovata.`;
+
   return {
     amount,
     type,
     notes: working.replace(amountMatch[0], '').trim() || null,
     categoryName,
     confidence: categoryName ? 0.9 : 0.65,
+    reason,
   };
 }

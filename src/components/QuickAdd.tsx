@@ -11,8 +11,14 @@ import { Plus, Zap, ArrowUp, ArrowDown } from 'lucide-react';
 import type { Category } from '@/types/finance';
 import { parseTransaction } from '@/lib/transactionParser';
 import { parseAndCreate } from '@/services/transactionService';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useLocation } from 'react-router-dom';
+
+const MOBILE_ONE_THUMB_AMOUNTS = [5, 10, 20, 50];
 
 export default function QuickAdd() {
+  const location = useLocation();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [recentCategories, setRecentCategories] = useState<string[]>([]);
@@ -21,10 +27,11 @@ export default function QuickAdd() {
   const categories = useCategories();
   const { accounts } = useAccounts();
   const { user } = useAuth();
-  const { currentFamilyGroupId } = useAppStore();
+  const { currentFamilyGroupId, sidebarOpen } = useAppStore();
 
   const parsed = parseTransaction(input, categories);
-  const defaultAccount = accounts.find(a => a.is_primary) || accounts[0];
+  const preferredAccountId = localStorage.getItem('ff_default_account_id') || '';
+  const defaultAccount = accounts.find((account) => account.id === preferredAccountId) || accounts.find(a => a.is_primary) || accounts[0];
 
   // Keyboard shortcut
   useEffect(() => {
@@ -45,6 +52,13 @@ export default function QuickAdd() {
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 100);
   }, [open]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('quickAdd') === '1') {
+      setOpen(true);
+    }
+  }, [location.search]);
 
   // Load recent categories from localStorage
   useEffect(() => {
@@ -113,16 +127,22 @@ export default function QuickAdd() {
         .slice(0, 4))
     : [];
 
+  const handleOneThumbAmount = (amount: number) => {
+    setInput(String(amount));
+  };
+
   return (
     <>
-      {/* FAB */}
-      <Button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all hover:scale-105"
-        size="icon"
-      >
-        <Plus className="w-6 h-6" />
-      </Button>
+      {/* FAB - Desktop only (mobile usa il pulsante Aggiungi nella navbar) */}
+      {!sidebarOpen && (
+        <Button
+          onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all hover:scale-105 hidden lg:inline-flex"
+          size="icon"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
@@ -141,12 +161,33 @@ export default function QuickAdd() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && parsed && handleSubmit()}
                 placeholder='Es. "50 cibo" o "+1500 stipendio"'
-                className="h-12 text-lg pr-12"
+                className="h-14 text-xl pr-12"
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                ⌘K
-              </kbd>
+              {!isMobile && (
+                <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  ⌘K
+                </kbd>
+              )}
             </div>
+
+            {isMobile && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Tap rapido (one-thumb):</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {MOBILE_ONE_THUMB_AMOUNTS.map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant="outline"
+                      className="h-11 text-base"
+                      onClick={() => handleOneThumbAmount(amount)}
+                    >
+                      {amount}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Live preview */}
             {parsed && (
@@ -218,7 +259,7 @@ export default function QuickAdd() {
               </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 sticky bottom-0 bg-background py-2">
               <Button
                 className="flex-1"
                 onClick={handleSubmit}
@@ -232,7 +273,9 @@ export default function QuickAdd() {
             </div>
 
             <p className="text-xs text-center text-muted-foreground">
-              Digita importo + parole chiave. Premi Invio per confermare.
+              {isMobile
+                ? 'Digita importo + parole chiave.'
+                : 'Digita importo + parole chiave. Premi Invio per confermare.'}
             </p>
           </div>
         </DialogContent>

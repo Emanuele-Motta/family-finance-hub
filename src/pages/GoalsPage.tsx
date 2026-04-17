@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
+import DatePicker from '@/components/DatePicker';
 import { Plus, Trash2, PlusCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -76,7 +77,7 @@ export default function GoalsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Scadenza (opzionale)</Label>
-                <Input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))} />
+                <DatePicker value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e }))} placeholder="Seleziona scadenza" isOptional />
               </div>
               <Button type="submit" className="w-full">Crea obiettivo</Button>
             </form>

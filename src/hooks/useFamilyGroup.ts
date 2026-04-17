@@ -11,19 +11,27 @@ export function useFamilyGroup() {
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = useCallback(async () => {
+    setLoading(true);
+
     if (!user) {
+      setFamilyGroups([]);
       setLoading(false);
       return;
     }
+
     const { data } = await supabase
       .from('family_groups')
       .select('*');
+
     if (data && data.length > 0) {
       setFamilyGroups(data as FamilyGroup[]);
       if (!currentFamilyGroupId) {
         setCurrentFamilyGroupId(data[0].id);
       }
+    } else {
+      setFamilyGroups([]);
     }
+
     setLoading(false);
   }, [user, currentFamilyGroupId, setCurrentFamilyGroupId]);
 

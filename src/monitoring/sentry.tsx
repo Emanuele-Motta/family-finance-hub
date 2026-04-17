@@ -2,6 +2,7 @@
 // Date: 16-Apr-2026
 // Sentry Configuration - Error tracking and monitoring setup
 
+import React from 'react';
 import * as Sentry from '@sentry/react';
 import { BrowserTracing } from '@sentry/tracing';
 import type { ReactNode } from 'react';

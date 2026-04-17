@@ -52,6 +52,119 @@ export type Database = {
           },
         ]
       }
+      anomalies: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          analysis: Json | null
+          anomaly_type: string
+          confidence: number
+          created_at: string
+          description: string
+          family_group_id: string
+          id: string
+          is_acknowledged: boolean
+          severity: string
+          transaction_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          analysis?: Json | null
+          anomaly_type: string
+          confidence?: number
+          created_at?: string
+          description: string
+          family_group_id: string
+          id?: string
+          is_acknowledged?: boolean
+          severity?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          analysis?: Json | null
+          anomaly_type?: string
+          confidence?: number
+          created_at?: string
+          description?: string
+          family_group_id?: string
+          id?: string
+          is_acknowledged?: boolean
+          severity?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomalies_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anomalies_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          family_group_id: string
+          id: string
+          ip_address: unknown
+          new_values: Json | null
+          old_values: Json | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          family_group_id: string
+          id?: string
+          ip_address?: unknown
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          family_group_id?: string
+          id?: string
+          ip_address?: unknown
+          new_values?: Json | null
+          old_values?: Json | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           amount: number
@@ -90,6 +203,69 @@ export type Database = {
           },
           {
             foreignKeyName: "budgets_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashflow_forecasts: {
+        Row: {
+          account_id: string
+          calculation_method: string
+          confidence_level: string
+          created_at: string
+          current_balance: number
+          family_group_id: string
+          forecast_balance: number
+          forecast_date: string
+          forecast_days: number
+          id: string
+          metadata: Json | null
+          projected_expenses: number
+          projected_income: number
+        }
+        Insert: {
+          account_id: string
+          calculation_method: string
+          confidence_level?: string
+          created_at?: string
+          current_balance: number
+          family_group_id: string
+          forecast_balance: number
+          forecast_date: string
+          forecast_days: number
+          id?: string
+          metadata?: Json | null
+          projected_expenses?: number
+          projected_income?: number
+        }
+        Update: {
+          account_id?: string
+          calculation_method?: string
+          confidence_level?: string
+          created_at?: string
+          current_balance?: number
+          family_group_id?: string
+          forecast_balance?: number
+          forecast_date?: string
+          forecast_days?: number
+          id?: string
+          metadata?: Json | null
+          projected_expenses?: number
+          projected_income?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_forecasts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_forecasts_family_group_id_fkey"
             columns: ["family_group_id"]
             isOneToOne: false
             referencedRelation: "family_groups"
@@ -193,7 +369,6 @@ export type Database = {
       }
       family_groups: {
         Row: {
-          car_expenses_settings: Record<string, unknown> | null
           created_at: string
           id: string
           invite_code: string
@@ -201,7 +376,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          car_expenses_settings?: Record<string, unknown> | null
           created_at?: string
           id?: string
           invite_code?: string
@@ -209,7 +383,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          car_expenses_settings?: Record<string, unknown> | null
           created_at?: string
           id?: string
           invite_code?: string
@@ -291,11 +464,231 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          account_id: string
+          created_at: string
+          family_group_id: string
+          id: string
+          import_source: string
+          imported_by: string
+          metadata: Json | null
+          processed_rows: number
+          status: string
+          total_rows: number
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          family_group_id: string
+          id?: string
+          import_source: string
+          imported_by: string
+          metadata?: Json | null
+          processed_rows?: number
+          status?: string
+          total_rows?: number
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          import_source?: string
+          imported_by?: string
+          metadata?: Json | null
+          processed_rows?: number
+          status?: string
+          total_rows?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_batches_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_pending_transactions: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string | null
+          created_at: string
+          date: string
+          description: string
+          duplicate_score: number | null
+          family_group_id: string
+          id: string
+          import_batch_id: string
+          is_reviewed: boolean
+          matched_transaction_id: string | null
+          notes: string | null
+          raw_data: Json
+          reviewed_by: string | null
+          row_index: number
+          status: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          date: string
+          description: string
+          duplicate_score?: number | null
+          family_group_id: string
+          id?: string
+          import_batch_id: string
+          is_reviewed?: boolean
+          matched_transaction_id?: string | null
+          notes?: string | null
+          raw_data: Json
+          reviewed_by?: string | null
+          row_index: number
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          duplicate_score?: number | null
+          family_group_id?: string
+          id?: string
+          import_batch_id?: string
+          is_reviewed?: boolean
+          matched_transaction_id?: string | null
+          notes?: string | null
+          raw_data?: Json
+          reviewed_by?: string | null
+          row_index?: number
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_pending_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pending_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pending_transactions_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pending_transactions_import_batch_id_fkey"
+            columns: ["import_batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_pending_transactions_matched_transaction_id_fkey"
+            columns: ["matched_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          delivery_channels: string[]
+          family_group_id: string
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          read_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          sent_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_channels?: string[]
+          family_group_id: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_channels?: string[]
+          family_group_id?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          sent_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
-          dashboard_kpis: string[] | null
           display_name: string | null
           id: string
           language: string
@@ -306,7 +699,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
-          dashboard_kpis?: string[] | null
           display_name?: string | null
           id?: string
           language?: string
@@ -317,7 +709,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
-          dashboard_kpis?: string[] | null
           display_name?: string | null
           id?: string
           language?: string
@@ -326,6 +717,111 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reconciliations: {
+        Row: {
+          confirmed_by: string | null
+          created_at: string
+          family_group_id: string
+          id: string
+          import_transaction_id: string
+          is_duplicate: boolean
+          match_confidence: number
+          match_method: string
+          match_score_details: Json | null
+          matched_transaction_id: string | null
+        }
+        Insert: {
+          confirmed_by?: string | null
+          created_at?: string
+          family_group_id: string
+          id?: string
+          import_transaction_id: string
+          is_duplicate?: boolean
+          match_confidence?: number
+          match_method: string
+          match_score_details?: Json | null
+          matched_transaction_id?: string | null
+        }
+        Update: {
+          confirmed_by?: string | null
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          import_transaction_id?: string
+          is_duplicate?: boolean
+          match_confidence?: number
+          match_method?: string
+          match_score_details?: Json | null
+          matched_transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliations_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliations_import_transaction_id_fkey"
+            columns: ["import_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "import_pending_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliations_matched_transaction_id_fkey"
+            columns: ["matched_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      record_versions: {
+        Row: {
+          change_reason: string | null
+          changed_by: string
+          created_at: string
+          data: Json
+          family_group_id: string
+          id: string
+          record_id: string
+          record_type: string
+          version_number: number
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_by: string
+          created_at?: string
+          data: Json
+          family_group_id: string
+          id?: string
+          record_id: string
+          record_type: string
+          version_number: number
+        }
+        Update: {
+          change_reason?: string | null
+          changed_by?: string
+          created_at?: string
+          data?: Json
+          family_group_id?: string
+          id?: string
+          record_id?: string
+          record_type?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_versions_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recurring_occurrences: {
         Row: {
@@ -403,10 +899,10 @@ export type Database = {
           name: string
           notify_days_before: number | null
           notify_method: string | null
-          starts_at: string
+          starts_at: string | null
           tags: string[] | null
           to_account_id: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
+          type: string
           updated_at: string
         }
         Insert: {
@@ -429,10 +925,10 @@ export type Database = {
           name: string
           notify_days_before?: number | null
           notify_method?: string | null
-          starts_at: string
+          starts_at?: string | null
           tags?: string[] | null
           to_account_id?: string | null
-          type: Database["public"]["Enums"]["transaction_type"]
+          type?: string
           updated_at?: string
         }
         Update: {
@@ -455,10 +951,10 @@ export type Database = {
           name?: string
           notify_days_before?: number | null
           notify_method?: string | null
-          starts_at?: string
+          starts_at?: string | null
           tags?: string[] | null
           to_account_id?: string | null
-          type?: Database["public"]["Enums"]["transaction_type"]
+          type?: string
           updated_at?: string
         }
         Relationships: [
@@ -488,6 +984,456 @@ export type Database = {
             columns: ["to_account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rule_applications: {
+        Row: {
+          applied_at: string
+          family_group_id: string
+          id: string
+          rule_id: string
+          transaction_id: string
+        }
+        Insert: {
+          applied_at?: string
+          family_group_id: string
+          id?: string
+          rule_id: string
+          transaction_id: string
+        }
+        Update: {
+          applied_at?: string
+          family_group_id?: string
+          id?: string
+          rule_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rule_applications_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_applications_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "transaction_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rule_applications_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tags: {
+        Row: {
+          color: string
+          created_at: string
+          family_group_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          family_group_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tags_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_bot_links: {
+        Row: {
+          created_at: string
+          family_group_id: string
+          id: string
+          linked_at: string
+          telegram_id: string
+          telegram_username: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          family_group_id: string
+          id?: string
+          linked_at?: string
+          telegram_id: string
+          telegram_username?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          linked_at?: string
+          telegram_id?: string
+          telegram_username?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_bot_links_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_approvals: {
+        Row: {
+          approval_reason: string | null
+          approval_threshold: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          family_group_id: string
+          id: string
+          requested_by: string
+          status: string
+          transaction_id: string
+        }
+        Insert: {
+          approval_reason?: string | null
+          approval_threshold: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          family_group_id: string
+          id?: string
+          requested_by: string
+          status?: string
+          transaction_id: string
+        }
+        Update: {
+          approval_reason?: string | null
+          approval_threshold?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          requested_by?: string
+          status?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_approvals_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_approvals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_audit: {
+        Row: {
+          action: string
+          created_at: string
+          family_group_id: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          transaction_id: string | null
+          trigger_source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          family_group_id: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          transaction_id?: string | null
+          trigger_source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          transaction_id?: string | null
+          trigger_source?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_audit_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_audit_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_comments: {
+        Row: {
+          content: string
+          created_at: string
+          family_group_id: string
+          id: string
+          is_settlement_comment: boolean
+          is_system_comment: boolean
+          settled_between_user_a: string | null
+          settled_between_user_b: string | null
+          settlement_amount: number | null
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          family_group_id: string
+          id?: string
+          is_settlement_comment?: boolean
+          is_system_comment?: boolean
+          settled_between_user_a?: string | null
+          settled_between_user_b?: string | null
+          settlement_amount?: number | null
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          family_group_id?: string
+          id?: string
+          is_settlement_comment?: boolean
+          is_system_comment?: boolean
+          settled_between_user_a?: string | null
+          settled_between_user_b?: string | null
+          settlement_amount?: number | null
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_comments_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_comments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_refunds: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          family_group_id: string
+          id: string
+          original_transaction_id: string
+          reason: string | null
+          refund_transaction_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          family_group_id: string
+          id?: string
+          original_transaction_id: string
+          reason?: string | null
+          refund_transaction_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          family_group_id?: string
+          id?: string
+          original_transaction_id?: string
+          reason?: string | null
+          refund_transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_refunds_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_refunds_original_transaction_id_fkey"
+            columns: ["original_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_refunds_refund_transaction_id_fkey"
+            columns: ["refund_transaction_id"]
+            isOneToOne: true
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_rules: {
+        Row: {
+          account_id: string | null
+          auto_apply: boolean
+          category_id: string | null
+          condition_logic: string
+          condition_type: string
+          conditions: Json
+          created_at: string
+          created_by: string
+          description: string | null
+          family_group_id: string
+          id: string
+          is_active: boolean
+          name: string
+          priority: number
+          require_review: boolean
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          auto_apply?: boolean
+          category_id?: string | null
+          condition_logic?: string
+          condition_type: string
+          conditions: Json
+          created_at?: string
+          created_by: string
+          description?: string | null
+          family_group_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          priority?: number
+          require_review?: boolean
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          auto_apply?: boolean
+          category_id?: string | null
+          condition_logic?: string
+          condition_type?: string
+          conditions?: Json
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          family_group_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          priority?: number
+          require_review?: boolean
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_rules_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_rules_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transaction_splits: {
+        Row: {
+          created_at: string
+          id: string
+          is_advance: boolean
+          share_amount: number
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_advance?: boolean
+          share_amount: number
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_advance?: boolean
+          share_amount?: number
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_splits_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
         ]
@@ -556,17 +1502,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "transactions_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
           {
@@ -591,7 +1537,44 @@ export type Database = {
     }
     Functions: {
       create_family_group: { Args: { _name: string }; Returns: string }
+      create_record_version: {
+        Args: {
+          _change_reason?: string
+          _data: Json
+          _family_group_id: string
+          _record_id: string
+          _record_type: string
+        }
+        Returns: number
+      }
       get_user_family_ids: { Args: { _user_id: string }; Returns: string[] }
+      is_family_admin: {
+        Args: { _family_group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _entity_id?: string
+          _entity_name?: string
+          _entity_type: string
+          _family_group_id: string
+          _new_values?: Json
+          _old_values?: Json
+        }
+        Returns: string
+      }
+      log_transaction_audit: {
+        Args: {
+          _action: string
+          _family_group_id: string
+          _new_values: Json
+          _old_values: Json
+          _transaction_id: string
+          _trigger_source?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       budget_period: "monthly" | "yearly"
@@ -728,7 +1711,7 @@ export const Constants = {
       budget_period: ["monthly", "yearly"],
       family_role: ["admin", "member"],
       recurrence_type: ["monthly", "yearly"],
-      transaction_type: ["income", "expense"],
+      transaction_type: ["income", "expense", "transfer"],
     },
   },
 } as const

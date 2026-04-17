@@ -378,8 +378,9 @@ describe('Recurring Service', () => {
       const startDate = new Date('2026-04-16');
       const endDate = new Date('2026-12-31');
       const occurrences = generateOccurrences(template as any, startDate, endDate);
-      expect(occurrences[occurrences.length - 1]).toBeLessThanOrEqual(
-        new Date('2026-04-20')
+      const last = occurrences[occurrences.length - 1] as unknown as Date;
+      expect(new Date(last as unknown as string).getTime()).toBeLessThanOrEqual(
+        new Date('2026-04-20').getTime()
       );
     });
   });

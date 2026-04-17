@@ -202,12 +202,12 @@ export function useCarExpensesSettings(familyGroupId: string | null) {
     const local = readLocalSettings(familyGroupId);
     if (local) setSettings(local);
 
-    supabase
-      .from('family_groups')
+    (supabase
+      .from('family_groups') as any)
       .select('car_expenses_settings')
       .eq('id', familyGroupId)
       .single()
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: any; error: any }) => {
         if (error || !data) return;
         const raw = data.car_expenses_settings as { enabled?: boolean; cars?: unknown[] } | null;
         const fromDb: CarExpensesSettings = {
@@ -232,9 +232,9 @@ export function useCarExpensesSettings(familyGroupId: string | null) {
     setSettings(normalized);
     writeLocalSettings(familyGroupId, normalized);
 
-    await supabase
-      .from('family_groups')
-      .update({ car_expenses_settings: normalized as unknown as Record<string, unknown> })
+    await (supabase
+      .from('family_groups') as any)
+      .update({ car_expenses_settings: normalized })
       .eq('id', familyGroupId);
   }, [familyGroupId]);
 

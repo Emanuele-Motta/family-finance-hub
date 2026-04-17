@@ -391,8 +391,11 @@ export function ImportReview({
             <TableRow>
               <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedRows.size === filteredTransactions.length && filteredTransactions.length > 0}
-                  indeterminate={selectedRows.size > 0 && selectedRows.size < filteredTransactions.length}
+                  checked={
+                    selectedRows.size > 0 && selectedRows.size < filteredTransactions.length
+                      ? 'indeterminate'
+                      : selectedRows.size === filteredTransactions.length && filteredTransactions.length > 0
+                  }
                   onCheckedChange={toggleAllSelection}
                 />
               </TableHead>

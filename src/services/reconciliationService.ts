@@ -48,7 +48,7 @@ const CONFIG = {
  * Calculates string similarity using Levenshtein distance
  * Returns value between 0 and 1
  */
-function calculateStringSimilarity(str1: string, str2: string): number {
+export function calculateStringSimilarity(str1: string, str2: string): number {
   const s1 = str1.toLowerCase().trim();
   const s2 = str2.toLowerCase().trim();
 

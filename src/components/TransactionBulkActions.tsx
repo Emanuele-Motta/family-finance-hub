@@ -414,8 +414,11 @@ export function TransactionBulkActions({
             <TableRow>
               <TableHead className="w-12">
                 <Checkbox
-                  checked={selectedIds.size === transactions.length && transactions.length > 0}
-                  indeterminate={selectedIds.size > 0 && selectedIds.size < transactions.length}
+                  checked={
+                    selectedIds.size > 0 && selectedIds.size < transactions.length
+                      ? 'indeterminate'
+                      : selectedIds.size === transactions.length && transactions.length > 0
+                  }
                   onCheckedChange={toggleAll}
                 />
               </TableHead>

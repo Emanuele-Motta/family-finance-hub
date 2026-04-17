@@ -65,12 +65,12 @@ export function TransactionCollaboration({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transaction_comments')
-        .select('*, auth.users(id, user_metadata)')
+        .select('*')
         .eq('transaction_id', transactionId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data as TransactionComment[]) || [];
+      return (data as unknown as TransactionComment[]) || [];
     },
   });
 
@@ -92,13 +92,25 @@ export function TransactionCollaboration({
   const { data: familyMembers = [] } = useQuery({
     queryKey: ['family:members', familyGroupId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: members, error } = await supabase
         .from('family_members')
-        .select('*, profiles!family_members_user_id_fkey(*)')
+        .select('*')
         .eq('family_group_id', familyGroupId);
 
       if (error) throw error;
-      return data || [];
+
+      const userIds = (members || []).map((m) => m.user_id);
+      if (userIds.length === 0) return [] as Array<{ user_id: string; profiles: { display_name: string | null; avatar_url: string | null } | null }>;
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar_url')
+        .in('user_id', userIds);
+
+      return (members || []).map((m) => ({
+        ...m,
+        profiles: profiles?.find((p) => p.user_id === m.user_id) || null,
+      }));
     },
   });
 

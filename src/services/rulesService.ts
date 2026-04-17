@@ -73,8 +73,8 @@ export async function createTransactionRule(
 ): Promise<TransactionRule> {
   const validated = ruleSchema.parse({ familyGroupId, ...input });
 
-  const { data, error } = await supabase
-    .from('transaction_rules')
+  const { data, error } = await (supabase
+    .from('transaction_rules') as any)
     .insert({
       family_group_id: validated.familyGroupId,
       name: validated.name,
@@ -94,8 +94,8 @@ export async function updateTransactionRule(
   ruleId: string,
   updates: Partial<Omit<TransactionRule, 'id' | 'family_group_id' | 'created_at' | 'updated_at'>>
 ): Promise<TransactionRule> {
-  const { data, error } = await supabase
-    .from('transaction_rules')
+  const { data, error } = await (supabase
+    .from('transaction_rules') as any)
     .update(updates)
     .eq('id', ruleId)
     .select()

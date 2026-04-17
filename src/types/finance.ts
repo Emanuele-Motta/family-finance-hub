@@ -98,6 +98,12 @@ export interface TransactionRule {
   updated_at: string;
 }
 
+export interface RuleCondition {
+  field: string;
+  operator: 'contains' | 'not_contains' | 'equals' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'not_in' | 'regex';
+  value: unknown;
+}
+
 export interface TransactionAuditEntry {
   id: string;
   family_group_id: string;

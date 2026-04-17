@@ -79,11 +79,11 @@ export default function CsvImport() {
 
   const parseExcel = async (file: File) => {
     const xlsxSource = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm';
-    const XLSX = await import(/* @vite-ignore */ xlsxSource);
+    const XLSX: any = await import(/* @vite-ignore */ xlsxSource);
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: 'array' });
     const firstSheet = wb.Sheets[wb.SheetNames[0]];
-    const matrix = XLSX.utils.sheet_to_json<(string | number)[]>(firstSheet, { header: 1, raw: false });
+    const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false }) as (string | number)[][];
 
     if (!matrix.length || matrix.length < 2) {
       toast.error('Excel vuoto o non valido');

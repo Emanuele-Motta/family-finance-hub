@@ -22,7 +22,7 @@ export default function MobileBottomNav({ hide = false }: { hide?: boolean }) {
   if (hide) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/80 bg-background/95 backdrop-blur-sm lg:hidden pb-[max(env(safe-area-inset-bottom),0.25rem)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/80 bg-background lg:hidden pb-[max(env(safe-area-inset-bottom),0.25rem)]">
       <div className="grid grid-cols-5 gap-1 px-2 py-1">
         {items.map((item) => {
           const active = item.to === '/?quickAdd=1'

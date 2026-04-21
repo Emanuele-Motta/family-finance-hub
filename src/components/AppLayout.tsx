@@ -62,7 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-64'
         )}
       >
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border/80 backdrop-blur-sm">
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-sidebar-border/80">
           <div className="w-10 h-10 rounded-xl bg-sidebar-primary/90 shadow-md shadow-sidebar-primary/30 flex items-center justify-center">
             <Wallet className="w-5 h-5 text-sidebar-primary-foreground" />
           </div>
@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         {familyGroups.length > 0 && (
-          <div className="mx-3 mt-4 px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
+          <div className="mx-3 mt-4 px-3 py-2.5 rounded-xl border border-white/10 bg-white/5">
             <div className="flex items-center gap-2 text-sm text-sidebar-foreground/80">
               <Users className="w-4 h-4 text-sidebar-primary" />
               <span className="truncate font-medium">{familyGroups[0]?.name}</span>
@@ -128,7 +128,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 border-b border-border bg-card/55 backdrop-blur-sm sticky top-0 z-20">
+        <header className="h-14 sm:h-16 flex items-center gap-4 px-4 sm:px-6 border-b border-border bg-card sticky top-0 z-20">
           <h1 className="text-base sm:text-lg font-semibold tracking-tight leading-none">
             {navItems.find((n) => n.to === location.pathname)?.label || 'FamilyFinance'}
           </h1>

@@ -16,27 +16,36 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          account_type: string
           balance: number
+          bank_name: string | null
           created_at: string
           family_group_id: string
+          iban_masked: string | null
           id: string
           is_primary: boolean
           name: string
           updated_at: string
         }
         Insert: {
+          account_type?: string
           balance?: number
+          bank_name?: string | null
           created_at?: string
           family_group_id: string
+          iban_masked?: string | null
           id?: string
           is_primary?: boolean
           name: string
           updated_at?: string
         }
         Update: {
+          account_type?: string
           balance?: number
+          bank_name?: string | null
           created_at?: string
           family_group_id?: string
+          iban_masked?: string | null
           id?: string
           is_primary?: boolean
           name?: string
@@ -203,6 +212,114 @@ export type Database = {
           },
           {
             foreignKeyName: "budgets_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_expenses: {
+        Row: {
+          car_id: string
+          created_at: string
+          expense_type: string
+          family_group_id: string
+          id: string
+          mileage: number | null
+          notes: string | null
+          transaction_id: string
+        }
+        Insert: {
+          car_id: string
+          created_at?: string
+          expense_type: string
+          family_group_id: string
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          transaction_id: string
+        }
+        Update: {
+          car_id?: string
+          created_at?: string
+          expense_type?: string
+          family_group_id?: string
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_expenses_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_expenses_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_expenses_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cars: {
+        Row: {
+          brand: string | null
+          created_at: string
+          created_by: string
+          family_group_id: string
+          fuel_type: string | null
+          id: string
+          is_active: boolean
+          license_plate_masked: string | null
+          logo_url: string | null
+          model: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          created_by: string
+          family_group_id: string
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean
+          license_plate_masked?: string | null
+          logo_url?: string | null
+          model?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          created_by?: string
+          family_group_id?: string
+          fuel_type?: string | null
+          id?: string
+          is_active?: boolean
+          license_plate_masked?: string | null
+          logo_url?: string | null
+          model?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cars_family_group_id_fkey"
             columns: ["family_group_id"]
             isOneToOne: false
             referencedRelation: "family_groups"
@@ -1446,12 +1563,16 @@ export type Database = {
           created_at: string
           created_by_user_id: string
           date: string
+          external_id: string | null
           family_group_id: string
+          hash_signature: string | null
           id: string
+          merchant_name: string | null
           notes: string | null
           paid_by_user_id: string | null
           recurrence_type: Database["public"]["Enums"]["recurrence_type"] | null
           recurring: boolean
+          source: string
           tags: string[] | null
           to_account_id: string | null
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1465,14 +1586,18 @@ export type Database = {
           created_at?: string
           created_by_user_id: string
           date?: string
+          external_id?: string | null
           family_group_id: string
+          hash_signature?: string | null
           id?: string
+          merchant_name?: string | null
           notes?: string | null
           paid_by_user_id?: string | null
           recurrence_type?:
             | Database["public"]["Enums"]["recurrence_type"]
             | null
           recurring?: boolean
+          source?: string
           tags?: string[] | null
           to_account_id?: string | null
           type: Database["public"]["Enums"]["transaction_type"]
@@ -1486,14 +1611,18 @@ export type Database = {
           created_at?: string
           created_by_user_id?: string
           date?: string
+          external_id?: string | null
           family_group_id?: string
+          hash_signature?: string | null
           id?: string
+          merchant_name?: string | null
           notes?: string | null
           paid_by_user_id?: string | null
           recurrence_type?:
             | Database["public"]["Enums"]["recurrence_type"]
             | null
           recurring?: boolean
+          source?: string
           tags?: string[] | null
           to_account_id?: string | null
           type?: Database["public"]["Enums"]["transaction_type"]
@@ -1533,9 +1662,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      family_ledger_summary: {
+        Row: {
+          family_group_id: string | null
+          month: string | null
+          total_amount: number | null
+          transaction_count: number | null
+          type: Database["public"]["Enums"]["transaction_type"] | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_family_group_id_fkey"
+            columns: ["family_group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      compute_transaction_hash: {
+        Args: {
+          p_amount: number
+          p_date: string
+          p_family_id: string
+          p_merchant: string
+        }
+        Returns: string
+      }
       create_family_group: { Args: { _name: string }; Returns: string }
       create_record_version: {
         Args: {
@@ -1564,17 +1720,29 @@ export type Database = {
         }
         Returns: string
       }
-      log_transaction_audit: {
-        Args: {
-          _action: string
-          _family_group_id: string
-          _new_values: Json
-          _old_values: Json
-          _transaction_id: string
-          _trigger_source?: string
-        }
-        Returns: undefined
-      }
+      log_transaction_audit:
+        | {
+            Args: {
+              _action: string
+              _family_group_id: string
+              _new_values: Json
+              _old_values: Json
+              _transaction_id: string
+              _trigger_source?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _action: string
+              _family_group_id: string
+              _new_values: Json
+              _old_values: Json
+              _transaction_id: string
+              _trigger_source?: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       budget_period: "monthly" | "yearly"

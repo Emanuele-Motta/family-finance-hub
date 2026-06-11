@@ -1,52 +1,46 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppStore } from '@/stores/appStore';
 import type { FamilyGroup } from '@/types/finance';
 
+const familyGroupsKey = (userId: string) => ['family_groups', userId] as const;
+
 export function useFamilyGroup() {
   const { user } = useAuth();
+  const qc = useQueryClient();
   const { currentFamilyGroupId, setCurrentFamilyGroupId } = useAppStore();
-  const [familyGroups, setFamilyGroups] = useState<FamilyGroup[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchGroups = useCallback(async () => {
-    setLoading(true);
+  const query = useQuery({
+    queryKey: familyGroupsKey(user?.id || ''),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase.from('family_groups').select('*');
+      return (data as FamilyGroup[]) || [];
+    },
+  });
 
-    if (!user) {
-      setFamilyGroups([]);
-      setLoading(false);
-      return;
-    }
+  const familyGroups = query.data ?? [];
 
-    const { data } = await supabase
-      .from('family_groups')
-      .select('*');
-
-    if (data && data.length > 0) {
-      setFamilyGroups(data as FamilyGroup[]);
-      if (!currentFamilyGroupId) {
-        setCurrentFamilyGroupId(data[0].id);
-      }
-    } else {
-      setFamilyGroups([]);
-    }
-
-    setLoading(false);
-  }, [user, currentFamilyGroupId, setCurrentFamilyGroupId]);
-
+  // Auto-select first group when none chosen
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    if (!currentFamilyGroupId && familyGroups.length > 0) {
+      setCurrentFamilyGroupId(familyGroups[0].id);
+    }
+  }, [currentFamilyGroupId, familyGroups, setCurrentFamilyGroupId]);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: familyGroupsKey(user?.id || '') });
 
   const createGroup = async (name: string) => {
     if (!user) return null;
     const { data, error } = await supabase.rpc('create_family_group', { _name: name });
     if (error) throw error;
-    
+
     const groupId = data as string;
     setCurrentFamilyGroupId(groupId);
-    await fetchGroups();
+    await invalidate();
     return { id: groupId, name } as FamilyGroup;
   };
 
@@ -58,17 +52,24 @@ export function useFamilyGroup() {
       .eq('invite_code', inviteCode)
       .single();
     if (!group) throw new Error('Codice invito non valido');
-    
+
     await supabase.from('family_members').insert({
       user_id: user.id,
       family_group_id: group.id,
       role: 'member',
     });
-    
+
     setCurrentFamilyGroupId(group.id);
-    await fetchGroups();
+    await invalidate();
     return group as FamilyGroup;
   };
 
-  return { familyGroups, currentFamilyGroupId, setCurrentFamilyGroupId, loading, createGroup, joinGroup };
+  return {
+    familyGroups,
+    currentFamilyGroupId,
+    setCurrentFamilyGroupId,
+    loading: !!user && query.isLoading,
+    createGroup,
+    joinGroup,
+  };
 }

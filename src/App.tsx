@@ -25,7 +25,17 @@ const AuditPage = lazy(() => import("@/pages/AuditPage"));
 const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000,            // 1 min — dedupe rapid navigations
+      gcTime: 5 * 60 * 1000,           // keep cache 5 min after unmount
+      refetchOnWindowFocus: false,     // avoid storm of refetches on tab focus
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+  },
+});
 
 function AppLoadingScreen() {
   return (

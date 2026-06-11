@@ -22,7 +22,15 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        // Safe chunking: isolate heavy, leaf-node libraries that don't depend
+        // on React's runtime so we don't recreate the createContext bug.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('/recharts/') || id.includes('/d3-')) return 'charts';
+          if (id.includes('/@supabase/')) return 'supabase';
+          if (id.includes('/date-fns/')) return 'date-fns';
+          if (id.includes('/lucide-react/')) return 'icons';
+        },
       },
     },
   },

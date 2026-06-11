@@ -1,36 +1,49 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppStore } from '@/stores/appStore';
 import { createRecurringTemplate, generateRecurringOccurrences, updateRecurringTemplate } from '@/services/recurringService';
 import { addOfflineChange } from '@/services/backupService';
 import type { Transaction, Category, Budget, Goal, Debt, Account, RecurringTemplate } from '@/types/finance';
 
+/**
+ * All hooks below share the React Query cache so navigating between pages
+ * does not re-fetch the same family-scoped data. External API is preserved
+ * (data, loading, mutators, refetch) for backward compatibility.
+ */
+
+const keys = {
+  transactions: (familyId: string) => ['transactions', familyId] as const,
+  categories: (familyId: string) => ['categories', familyId] as const,
+  budgets: (familyId: string) => ['budgets', familyId] as const,
+  goals: (familyId: string) => ['goals', familyId] as const,
+  debts: (familyId: string) => ['debts', familyId] as const,
+  accounts: (familyId: string) => ['accounts', familyId] as const,
+  recurring: (familyId: string) => ['recurring_templates', familyId] as const,
+};
+
 export function useTransactions() {
   const { currentFamilyGroupId } = useAppStore();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const enabled = !!currentFamilyGroupId;
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setTransactions([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const query = useQuery({
+    queryKey: keys.transactions(currentFamilyGroupId || ''),
+    enabled,
+    queryFn: async () => {
       const { data } = await supabase
         .from('transactions')
         .select('*')
-        .eq('family_group_id', currentFamilyGroupId)
+        .eq('family_group_id', currentFamilyGroupId!)
         .order('date', { ascending: false });
-      setTransactions((data as Transaction[]) || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFamilyGroupId]);
+      return (data as Transaction[]) || [];
+    },
+  });
 
-  useEffect(() => { fetch(); }, [fetch]);
+  const invalidate = useCallback(
+    () => qc.invalidateQueries({ queryKey: keys.transactions(currentFamilyGroupId || '') }),
+    [qc, currentFamilyGroupId]
+  );
 
   const addTransaction = async (t: Omit<Transaction, 'id' | 'created_at'>) => {
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -38,7 +51,7 @@ export function useTransactions() {
     }
     const { error } = await supabase.from('transactions').insert(t as any);
     if (error) throw error;
-    await fetch();
+    await invalidate();
   };
 
   const updateTransaction = async (id: string, t: Partial<Transaction>) => {
@@ -47,7 +60,7 @@ export function useTransactions() {
     }
     const { error } = await supabase.from('transactions').update(t as any).eq('id', id);
     if (error) throw error;
-    await fetch();
+    await invalidate();
   };
 
   const deleteTransaction = async (id: string) => {
@@ -56,249 +69,193 @@ export function useTransactions() {
     }
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) throw error;
-    await fetch();
+    await invalidate();
   };
 
-  return { transactions, loading, addTransaction, updateTransaction, deleteTransaction, refetch: fetch };
+  return {
+    transactions: query.data ?? [],
+    loading: enabled ? query.isLoading : false,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    refetch: async () => { await query.refetch(); },
+  };
 }
 
 export function useCategories() {
   const { currentFamilyGroupId } = useAppStore();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const enabled = !!currentFamilyGroupId;
 
-  useEffect(() => {
-    const fetch = async () => {
-      if (!currentFamilyGroupId) {
-        setCategories([]);
-        return;
-      }
-
+  const query = useQuery({
+    queryKey: keys.categories(currentFamilyGroupId || ''),
+    enabled,
+    staleTime: 5 * 60 * 1000, // categories rarely change
+    queryFn: async () => {
       const { data } = await supabase
         .from('categories')
         .select('*')
-        .eq('family_group_id', currentFamilyGroupId);
-      setCategories((data as Category[]) || []);
+        .eq('family_group_id', currentFamilyGroupId!);
+      return (data as Category[]) || [];
+    },
+  });
+
+  return query.data ?? [];
+}
+
+function makeCrudHook<TRow extends { id: string }>(
+  table: 'budgets' | 'goals' | 'debts',
+  keyFn: (familyId: string) => readonly unknown[]
+) {
+  return function useTable() {
+    const { currentFamilyGroupId } = useAppStore();
+    const qc = useQueryClient();
+    const enabled = !!currentFamilyGroupId;
+
+    const query = useQuery({
+      queryKey: keyFn(currentFamilyGroupId || ''),
+      enabled,
+      queryFn: async () => {
+        const { data } = await supabase
+          .from(table)
+          .select('*')
+          .eq('family_group_id', currentFamilyGroupId!);
+        return ((data as unknown) as TRow[]) || [];
+      },
+    });
+
+    const invalidate = () => qc.invalidateQueries({ queryKey: keyFn(currentFamilyGroupId || '') });
+
+    const add = async (row: Omit<TRow, 'id'>) => {
+      const { error } = await supabase.from(table).insert(row as any);
+      if (error) throw error;
+      await invalidate();
     };
-    fetch();
-  }, [currentFamilyGroupId]);
+    const update = async (id: string, row: Partial<TRow>) => {
+      const { error } = await supabase.from(table).update(row as any).eq('id', id);
+      if (error) throw error;
+      await invalidate();
+    };
+    const remove = async (id: string) => {
+      const { error } = await supabase.from(table).delete().eq('id', id);
+      if (error) throw error;
+      await invalidate();
+    };
 
-  return categories;
+    return {
+      data: query.data ?? [],
+      loading: enabled ? query.isLoading : false,
+      add,
+      update,
+      remove,
+      refetch: async () => { await query.refetch(); },
+    };
+  };
 }
 
+const useBudgetsBase = makeCrudHook<Budget>('budgets', keys.budgets);
 export function useBudgets() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setBudgets([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('budgets')
-        .select('*')
-        .eq('family_group_id', currentFamilyGroupId);
-      setBudgets((data as Budget[]) || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addBudget = async (b: Omit<Budget, 'id'>) => {
-    const { error } = await supabase.from('budgets').insert(b as any);
-    if (error) throw error;
-    await fetch();
+  const b = useBudgetsBase();
+  return {
+    budgets: b.data,
+    loading: b.loading,
+    addBudget: b.add,
+    updateBudget: b.update,
+    deleteBudget: b.remove,
+    refetch: b.refetch,
   };
-
-  const updateBudget = async (id: string, b: Partial<Budget>) => {
-    const { error } = await supabase.from('budgets').update(b as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteBudget = async (id: string) => {
-    const { error } = await supabase.from('budgets').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { budgets, loading, addBudget, updateBudget, deleteBudget, refetch: fetch };
 }
 
+const useGoalsBase = makeCrudHook<Goal>('goals', keys.goals);
 export function useGoals() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setGoals([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('family_group_id', currentFamilyGroupId);
-      setGoals((data as Goal[]) || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addGoal = async (g: Omit<Goal, 'id'>) => {
-    const { error } = await supabase.from('goals').insert(g as any);
-    if (error) throw error;
-    await fetch();
+  const g = useGoalsBase();
+  return {
+    goals: g.data,
+    loading: g.loading,
+    addGoal: g.add,
+    updateGoal: g.update,
+    deleteGoal: g.remove,
+    refetch: g.refetch,
   };
-
-  const updateGoal = async (id: string, g: Partial<Goal>) => {
-    const { error } = await supabase.from('goals').update(g as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteGoal = async (id: string) => {
-    const { error } = await supabase.from('goals').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { goals, loading, addGoal, updateGoal, deleteGoal, refetch: fetch };
 }
 
+const useDebtsBase = makeCrudHook<Debt>('debts', keys.debts);
 export function useDebts() {
-  const { currentFamilyGroupId } = useAppStore();
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setDebts([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('debts')
-        .select('*')
-        .eq('family_group_id', currentFamilyGroupId);
-      setDebts((data as Debt[]) || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
-
-  const addDebt = async (d: Omit<Debt, 'id'>) => {
-    const { error } = await supabase.from('debts').insert(d as any);
-    if (error) throw error;
-    await fetch();
+  const d = useDebtsBase();
+  return {
+    debts: d.data,
+    loading: d.loading,
+    addDebt: d.add,
+    updateDebt: d.update,
+    deleteDebt: d.remove,
+    refetch: d.refetch,
   };
-
-  const updateDebt = async (id: string, d: Partial<Debt>) => {
-    const { error } = await supabase.from('debts').update(d as any).eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  const deleteDebt = async (id: string) => {
-    const { error } = await supabase.from('debts').delete().eq('id', id);
-    if (error) throw error;
-    await fetch();
-  };
-
-  return { debts, loading, addDebt, updateDebt, deleteDebt, refetch: fetch };
 }
 
 export function useAccounts() {
   const { currentFamilyGroupId } = useAppStore();
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const enabled = !!currentFamilyGroupId;
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setAccounts([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    try {
+  const query = useQuery({
+    queryKey: keys.accounts(currentFamilyGroupId || ''),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
       const { data } = await supabase
         .from('accounts')
         .select('*')
-        .eq('family_group_id', currentFamilyGroupId)
+        .eq('family_group_id', currentFamilyGroupId!)
         .order('is_primary', { ascending: false })
         .order('name', { ascending: true });
-      setAccounts((data as Account[]) || []);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+      return (data as Account[]) || [];
+    },
+  });
 
   const updateAccount = async (id: string, account: Partial<Account>) => {
     const { error } = await supabase.from('accounts').update(account as any).eq('id', id);
     if (error) throw error;
-    await fetch();
+    await qc.invalidateQueries({ queryKey: keys.accounts(currentFamilyGroupId || '') });
   };
 
-  return { accounts, loading, updateAccount, refetch: fetch };
+  return {
+    accounts: query.data ?? [],
+    loading: enabled ? query.isLoading : false,
+    updateAccount,
+    refetch: async () => { await query.refetch(); },
+  };
 }
 
 export function useRecurringTemplates() {
   const { currentFamilyGroupId } = useAppStore();
-  const [templates, setTemplates] = useState<RecurringTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const enabled = !!currentFamilyGroupId;
 
-  const fetch = useCallback(async () => {
-    if (!currentFamilyGroupId) {
-      setTemplates([]);
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: keys.recurring(currentFamilyGroupId || ''),
+    enabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('recurring_templates')
+        .select('*')
+        .eq('family_group_id', currentFamilyGroupId!)
+        .order('is_active', { ascending: false })
+        .order('created_at', { ascending: false });
+      return (data as RecurringTemplate[]) || [];
+    },
+  });
 
-    setLoading(true);
-    const { data } = await supabase
-      .from('recurring_templates')
-      .select('*')
-      .eq('family_group_id', currentFamilyGroupId)
-      .order('is_active', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    setTemplates((data as RecurringTemplate[]) || []);
-    setLoading(false);
-  }, [currentFamilyGroupId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+  const invalidate = () => qc.invalidateQueries({ queryKey: keys.recurring(currentFamilyGroupId || '') });
 
   const addTemplate = async (template: Omit<RecurringTemplate, 'id' | 'created_at' | 'updated_at'>) => {
     await createRecurringTemplate(template);
-    await fetch();
+    await invalidate();
   };
 
   const updateTemplate = async (id: string, updates: Partial<RecurringTemplate>) => {
     if (!currentFamilyGroupId) return;
     await updateRecurringTemplate(id, updates);
     await generateRecurringOccurrences(id, currentFamilyGroupId);
-    await fetch();
+    await invalidate();
   };
 
   const toggleTemplate = async (id: string, isActive: boolean) => {
@@ -309,8 +266,16 @@ export function useRecurringTemplates() {
     await supabase.from('recurring_occurrences').delete().eq('template_id', id);
     const { error } = await supabase.from('recurring_templates').delete().eq('id', id);
     if (error) throw error;
-    await fetch();
+    await invalidate();
   };
 
-  return { templates, loading, addTemplate, updateTemplate, toggleTemplate, deleteTemplate, refetch: fetch };
+  return {
+    templates: query.data ?? [],
+    loading: enabled ? query.isLoading : false,
+    addTemplate,
+    updateTemplate,
+    toggleTemplate,
+    deleteTemplate,
+    refetch: async () => { await query.refetch(); },
+  };
 }

@@ -119,7 +119,7 @@ function makeCrudHook<TRow extends { id: string }>(
           .from(table)
           .select('*')
           .eq('family_group_id', currentFamilyGroupId!);
-        return (data as TRow[]) || [];
+        return ((data as unknown) as TRow[]) || [];
       },
     });
 
